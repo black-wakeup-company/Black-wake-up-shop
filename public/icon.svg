@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
+  <rect width="512" height="512" rx="108" fill="#0f172a" />
+  <circle cx="256" cy="256" r="180" fill="#1e293b" />
+  <!-- Shopping Bag Outline -->
+  <path d="M176 192v-32a80 80 0 0 1 160 0v32" fill="none" stroke="#10b981" stroke-width="28" stroke-linecap="round" />
+  <rect x="136" y="192" width="240" height="220" rx="24" fill="#0f172a" stroke="#10b981" stroke-width="28" />
+  <!-- Currency Symbol or Star -->
+  <text x="256" y="325" font-family="system-ui, sans-serif" font-size="72" font-weight="900" fill="#ffffff" text-anchor="middle">FC</text>
+</svg>
