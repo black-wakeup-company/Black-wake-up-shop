@@ -1,0 +1,94 @@
+@import "tailwindcss";
+
+@layer base {
+  body {
+    font-family: 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
+    color: #0f172a;
+    background-color: #f8fafc;
+    -webkit-font-smoothing: antialiased;
+  }
+}
+
+@media print {
+  /* Set html & body to visible white page */
+  html, body {
+    background-color: #ffffff !important;
+    background: #ffffff !important;
+    color: #000000 !important;
+    height: auto !important;
+    min-height: 100% !important;
+    overflow: visible !important;
+    margin: 0 !important;
+    padding: 0 !important;
+  }
+
+  /* Hide regular UI elements */
+  header, footer, nav, button, .no-print {
+    display: none !important;
+    visibility: hidden !important;
+  }
+
+  /* Reset modal containers so they don't clip printable content */
+  .fixed, .relative, .absolute {
+    position: static !important;
+    overflow: visible !important;
+    height: auto !important;
+    max-height: none !important;
+    background: transparent !important;
+    box-shadow: none !important;
+    border: none !important;
+    padding: 0 !important;
+    margin: 0 !important;
+  }
+
+  /* Hide backdrop overlays */
+  .backdrop-blur-sm, .bg-slate-900\/60, .bg-slate-900\/70 {
+    background: transparent !important;
+  }
+
+  /* Ensure the printable document is displayed clearly */
+  #printable-document {
+    display: block !important;
+    visibility: visible !important;
+    width: 100% !important;
+    margin: 0 auto !important;
+    padding: 0 !important;
+    box-shadow: none !important;
+    border: none !important;
+    overflow: visible !important;
+    background: #ffffff !important;
+    color: #000000 !important;
+  }
+
+  #printable-document * {
+    visibility: visible !important;
+  }
+
+  /* Specific styles for thermal receipt format */
+  #printable-document.format-ticket {
+    max-width: 80mm !important;
+    width: 80mm !important;
+    margin: 0 auto !important;
+    padding: 4mm !important;
+    font-size: 11px !important;
+  }
+
+  /* Specific styles for standard A4 commercial invoice format */
+  #printable-document.format-facture {
+    max-width: 100% !important;
+    width: 100% !important;
+    padding: 8mm !important;
+    font-size: 12px !important;
+  }
+
+  /* Avoid unwanted page breaks inside table rows and totals */
+  .print-avoid-break {
+    page-break-inside: avoid !important;
+    break-inside: avoid !important;
+  }
+
+  @page {
+    margin: 6mm;
+    size: auto;
+  }
+}
