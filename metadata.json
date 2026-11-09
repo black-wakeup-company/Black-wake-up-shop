@@ -1,0 +1,6 @@
+{
+  "name": "BoutiquePro - Gestion & Caisse",
+  "description": "Solution complète de gestion de boutique : caisse point de vente (POS), inventaire en temps réel, suivi des ventes, gestion des clients et comptabilité.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

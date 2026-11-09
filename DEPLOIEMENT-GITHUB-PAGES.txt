@@ -1,0 +1,25 @@
+BLACKWAKEUPSHOP2 - VERSION CORRIGEE POUR GITHUB PAGES
+
+1) Fais d'abord une copie de securite de ton depot GitHub actuel.
+2) Ouvre le depot Blackwakeupshop2 sur GitHub.
+3) Remplace les fichiers du depot par le contenu du dossier Blackwakeupshop2-main de cette archive. Il faut aussi envoyer le dossier cache .github/workflows/deploy.yml.
+4) Dans GitHub > Settings > Pages, regle Build and deployment > Source sur GitHub Actions.
+5) Enregistre/pousse les fichiers sur la branche main. Le workflow Deploy to GitHub Pages construira l'application et la publiera.
+6) Attends que le workflow soit vert, puis ouvre :
+   https://black-wakeup-company.github.io/Blackwakeupshop2/
+
+GOOGLE DRIVE
+- Les fichiers googleAuth.ts, googleDriveService.ts et useGoogleDriveBackup.ts n'ont pas ete modifies.
+- Les sauvegardes deja presentes dans Google Drive ne sont pas effacees par ces corrections.
+- Pour que la connexion Google fonctionne sur GitHub Pages, verifie dans Firebase Authentication > Settings > Authorized domains que black-wakeup-company.github.io est autorise, et que le fournisseur Google est active.
+- Apres publication, reconnecte Google Drive et fais un test de sauvegarde puis de restauration.
+- La sauvegarde automatique actuelle s'execute toutes les heures tant que l'application reste ouverte et que la session Google est connectee.
+
+SECURITE
+- Le depot contient la configuration Firebase cote navigateur (API key et identifiants publics). C'est habituel pour Firebase Web, mais les regles Firebase et les domaines autorises doivent etre correctement limites.
+- Ne publie jamais de cle privee de compte de service, de jeton OAuth, de vrai fichier .env ou de mot de passe.
+- Les PIN initiaux sont visibles dans le code de l'application : change-les avant un usage reel. Le PIN cote navigateur n'est pas une authentification forte.
+
+CONTROLES
+- Les chemins GitHub Pages, le manifeste PWA, l'enregistrement du service worker et les images d'exemple ont ete corriges pour le sous-dossier /Blackwakeupshop2/.
+- Le build n'a pas pu etre execute ici car l'installation des dependances a depasse le delai disponible. Le workflow GitHub Actions effectuera le build sur GitHub.
