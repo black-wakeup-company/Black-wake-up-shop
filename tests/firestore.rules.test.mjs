@@ -220,6 +220,10 @@ test('owner can change employee role and suspension cannot be self-reversed', as
   await assertFails(updateDoc(doc(employeeDb, 'stores', storeId, 'members', employeeUid), {
     active: true, status: 'active'
   }));
+  await assertFails(updateDoc(doc(ownerDb, 'stores', storeId, 'members', employeeUid), {
+    uid: employeeUid, role: 'manager', displayName: 'Employee',
+    email: 'role-change@example.test', active: false, status: 'pending', createdAt
+  }));
   await assertFails(deleteDoc(doc(employeeDb, 'stores', storeId, 'members', employeeUid)));
 });
 
