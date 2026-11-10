@@ -44,18 +44,24 @@ const requireAuthenticatedUser = (user?: User): User => {
   return currentUser;
 };
 
-const storeCollectionRef = (storeId: string, name: StoreCollection) => {
-  if (!storeId.trim()) {
-    throw new Error('Identifiant de boutique manquant.');
+const requireStoreId = (storeId: string): string => {
+  const normalized = storeId.trim();
+  if (!normalized || normalized.includes('/')) {
+    throw new Error('Identifiant de boutique invalide.');
   }
-  return collection(db, 'stores', storeId, name);
+  return normalized;
+};
+
+const storeCollectionRef = (storeId: string, name: StoreCollection) => {
+  return collection(db, 'stores', requireStoreId(storeId), name);
 };
 
 const storeDocumentRef = (storeId: string, name: StoreCollection, id: string) => {
-  if (!id.trim()) {
-    throw new Error('Identifiant de document manquant.');
+  const normalizedId = id.trim();
+  if (!normalizedId || normalizedId.includes('/')) {
+    throw new Error('Identifiant de document invalide.');
   }
-  return doc(storeCollectionRef(storeId, name), id);
+  return doc(storeCollectionRef(storeId, name), normalizedId);
 };
 
 /**
@@ -76,7 +82,13 @@ export const storeDataService = {
   ): Promise<StoreDocumentMap[T][]> {
     requireAuthenticatedUser(user);
     const snapshot = await getDocs(storeCollectionRef(storeId, name));
-    return snapshot.docs.map((item) => item.data() as StoreDocumentMap[T]);
+    return snapshot.docs.map((item) => {
+      const data = item.data();
+      if (typeof data.id !== 'string' || data.id !== item.id) {
+        throw new Error(`Document ${item.id} incohérent dans ${name} : son identifiant interne ne correspond pas.`);
+      }
+      return data as StoreDocumentMap[T];
+    });
   },
 
   async get<T extends StoreCollection>(
@@ -97,6 +109,9 @@ export const storeDataService = {
     user?: User
   ): Promise<void> {
     requireAuthenticatedUser(user);
+    if (!item.id || !item.id.trim()) {
+      throw new Error('Un identifiant est obligatoire pour créer ce document.');
+    }
     await setDoc(storeDocumentRef(storeId, name, item.id), item);
   },
 
@@ -123,7 +138,7 @@ export const storeDataService = {
 
   async getSettings(storeId: string, user?: User): Promise<BoutiqueSettings | null> {
     requireAuthenticatedUser(user);
-    const snapshot = await getDoc(doc(db, 'stores', storeId, 'settings', 'main'));
+    const snapshot = await getDoc(doc(db, 'stores', requireStoreId(storeId), 'settings', 'main'));
     return snapshot.exists() ? snapshot.data() as BoutiqueSettings : null;
   },
 
@@ -133,6 +148,6 @@ export const storeDataService = {
     user?: User
   ): Promise<void> {
     requireAuthenticatedUser(user);
-    await setDoc(doc(db, 'stores', storeId, 'settings', 'main'), settings);
+    await setDoc(doc(db, 'stores', requireStoreId(storeId), 'settings', 'main'), settings);
   }
 };
