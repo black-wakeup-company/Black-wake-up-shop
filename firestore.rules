@@ -15,13 +15,18 @@ service cloud.firestore {
     }
 
     match /stores/{storeId} {
-      // A store ID is the owner's Firebase UID.
+      // The owner may read the exact store document addressed by their own UID.
+      // This permits the first provisioning transaction to read a missing doc.
+      allow get: if signedIn() && request.auth.uid == storeId;
+      allow list: if false;
+
       allow create: if signedIn()
         && request.auth.uid == storeId
-        && request.resource.data.ownerUid == request.auth.uid;
-
-      allow get: if isStoreOwner(storeId);
-      allow list: if false;
+        && request.resource.data.ownerUid == request.auth.uid
+        && request.resource.data.keys().hasOnly([
+          'ownerUid', 'name', 'ownerEmail', 'createdAt', 'schemaVersion'
+        ])
+        && request.resource.data.schemaVersion == 1;
 
       allow update: if isStoreOwner(storeId)
         && request.resource.data.ownerUid == resource.data.ownerUid
@@ -30,7 +35,13 @@ service cloud.firestore {
       allow delete: if false;
 
       match /members/{memberUid} {
-        // The initial owner membership must be created atomically with its store.
+        // The owner may read only their own membership doc during first setup.
+        allow get: if signedIn()
+          && request.auth.uid == storeId
+          && memberUid == request.auth.uid;
+        allow list: if isStoreOwner(storeId);
+
+        // Initial owner membership must be created atomically with its store.
         allow create: if signedIn()
           && request.auth.uid == storeId
           && memberUid == request.auth.uid
@@ -39,13 +50,11 @@ service cloud.firestore {
           && request.resource.data.active == true
           && getAfter(/databases/$(database)/documents/stores/$(storeId)).data.ownerUid == request.auth.uid;
 
-        allow read: if isStoreOwner(storeId);
-        // Owner membership cannot be edited or deleted from the client.
         allow update, delete: if false;
       }
 
-      // Products, sales, customers, expenses, staff and settings stay
-      // inaccessible until their role-specific rules are implemented.
+      // Business data remains denied until collection- and role-specific rules
+      // are completed and tested.
       match /{document=**} {
         allow read, write: if false;
       }
