@@ -6,7 +6,7 @@ import {
   query,
   orderBy,
   serverTimestamp,
-  setDoc,
+  runTransaction,
   updateDoc,
   type DocumentData
 } from 'firebase/firestore';
@@ -63,14 +63,20 @@ export const createEmployeeInvitation = async (
   if (!['manager', 'cashier'].includes(employee.role)) throw new Error('Rôle employé invalide.');
 
   const memberRef = doc(db, 'stores', storeId, 'members', uid);
-  await setDoc(memberRef, {
-    uid,
-    role: employee.role,
-    displayName,
-    email,
-    active: false,
-    status: 'pending',
-    createdAt: serverTimestamp()
+  await runTransaction(db, async (transaction) => {
+    const existing = await transaction.get(memberRef);
+    if (existing.exists()) {
+      throw new Error('Ce compte possède déjà une adhésion dans cette boutique.');
+    }
+    transaction.set(memberRef, {
+      uid,
+      role: employee.role,
+      displayName,
+      email,
+      active: false,
+      status: 'pending',
+      createdAt: serverTimestamp()
+    });
   });
 };
 
