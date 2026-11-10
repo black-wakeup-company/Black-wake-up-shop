@@ -4,9 +4,11 @@ import assert from 'node:assert/strict';
 import { syncOutbox } from '../src/services/syncOutbox.ts';
 
 const now = '2026-11-10T12:00:00.000Z';
-const mutation = (overrides = {}) => ({
-  id: `test-${Math.random().toString(36).slice(2)}`,
-  storeId: 'boutique-alpha',
+const mutation = (overrides = {}) => {
+  const unique = Math.random().toString(36).slice(2);
+  return ({
+  id: `test-${unique}`,
+  storeId: `boutique-${unique}`,
   entity: 'products',
   operation: 'create',
   documentId: 'product-001',
@@ -14,7 +16,8 @@ const mutation = (overrides = {}) => ({
   createdAt: now,
   attempts: 0,
   ...overrides
-});
+  });
+};
 
 test('persists a pending mutation and returns it for its boutique only', async () => {
   const item = mutation();
