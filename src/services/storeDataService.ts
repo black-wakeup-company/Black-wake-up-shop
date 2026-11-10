@@ -56,6 +56,12 @@ const storeCollectionRef = (storeId: string, name: StoreCollection) => {
   return collection(db, 'stores', requireStoreId(storeId), name);
 };
 
+const assertDocumentIdentity = (data: Record<string, unknown>, expectedId: string, name: StoreCollection) => {
+  if (typeof data.id !== 'string' || data.id !== expectedId) {
+    throw new Error(`Document ${expectedId} incohérent dans ${name} : son identifiant interne ne correspond pas.`);
+  }
+};
+
 const storeDocumentRef = (storeId: string, name: StoreCollection, id: string) => {
   const normalizedId = id.trim();
   if (!normalizedId || normalizedId.includes('/')) {
@@ -84,9 +90,7 @@ export const storeDataService = {
     const snapshot = await getDocs(storeCollectionRef(storeId, name));
     return snapshot.docs.map((item) => {
       const data = item.data();
-      if (typeof data.id !== 'string' || data.id !== item.id) {
-        throw new Error(`Document ${item.id} incohérent dans ${name} : son identifiant interne ne correspond pas.`);
-      }
+      assertDocumentIdentity(data, item.id, name);
       return data as StoreDocumentMap[T];
     });
   },
@@ -98,8 +102,12 @@ export const storeDataService = {
     user?: User
   ): Promise<StoreDocumentMap[T] | null> {
     requireAuthenticatedUser(user);
-    const snapshot = await getDoc(storeDocumentRef(storeId, name, id));
-    return snapshot.exists() ? snapshot.data() as StoreDocumentMap[T] : null;
+    const normalizedId = id.trim();
+    const snapshot = await getDoc(storeDocumentRef(storeId, name, normalizedId));
+    if (!snapshot.exists()) return null;
+    const data = snapshot.data();
+    assertDocumentIdentity(data, normalizedId, name);
+    return data as StoreDocumentMap[T];
   },
 
   async create<T extends StoreCollection>(
@@ -112,6 +120,9 @@ export const storeDataService = {
     if (!item.id || !item.id.trim()) {
       throw new Error('Un identifiant est obligatoire pour créer ce document.');
     }
+    if (item.id !== item.id.trim()) {
+      throw new Error('L’identifiant du document ne doit pas contenir d’espaces au début ou à la fin.');
+    }
     await setDoc(storeDocumentRef(storeId, name, item.id), item);
   },
 
@@ -123,6 +134,9 @@ export const storeDataService = {
     user?: User
   ): Promise<void> {
     requireAuthenticatedUser(user);
+    if (Object.prototype.hasOwnProperty.call(changes, 'id')) {
+      throw new Error('L’identifiant d’un document ne peut pas être modifié.');
+    }
     await updateDoc(storeDocumentRef(storeId, name, id), changes);
   },
 
