@@ -124,3 +124,20 @@ test('cashier cannot delete sales or edit sales', async () => {
   await assertFails(deleteDoc(doc(db, 'stores', storeId, 'sales', 's1')));
   await assertFails(updateDoc(doc(db, 'stores', storeId, 'sales', 's1'), { total: 1 }));
 });
+
+
+test('stock movements are append-only and scoped to the active boutique', async () => {
+  const db = dbFor(cashierUid);
+  const movement = {
+    id: 'move-sale-1', productId: 'p1', quantityDelta: -2,
+    reason: 'sale', referenceId: 'sale-1',
+    createdAt: new Date().toISOString(), createdBy: cashierUid
+  };
+  const movementRef = doc(db, 'stores', storeId, 'stockMovements', movement.id);
+  await assertSucceeds(setDoc(movementRef, movement));
+  await assertFails(updateDoc(movementRef, { quantityDelta: -3 }));
+  await assertFails(deleteDoc(movementRef));
+  await assertFails(setDoc(doc(db, 'stores', storeId, 'stockMovements', 'forged'), {
+    ...movement, id: 'different-id'
+  }));
+});
