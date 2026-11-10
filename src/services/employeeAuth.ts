@@ -80,9 +80,6 @@ export const createEmployeeAccount = async (input: CreateEmployeeInput) => {
     employeeUid = credential.user.uid;
     await updateProfile(credential.user, { displayName });
 
-    // Verification email is sent from the employee's auth session.
-    await sendEmailVerification(credential.user);
-
     // Firestore write is made with the primary owner auth session.
     await setDoc(doc(db, 'stores', storeId, 'members', employeeUid), {
       uid: employeeUid,
@@ -93,7 +90,15 @@ export const createEmployeeAccount = async (input: CreateEmployeeInput) => {
       createdAt: serverTimestamp()
     });
 
-    return { uid: employeeUid, email, displayName, role: input.role };
+    let verificationEmailSent = true;
+    try {
+      await sendEmailVerification(credential.user);
+    } catch (verificationError) {
+      verificationEmailSent = false;
+      console.warn('Compte créé, mais email de vérification non envoyé.', verificationError);
+    }
+
+    return { uid: employeeUid, email, displayName, role: input.role, verificationEmailSent };
   } catch (error) {
     if (employeeUid) {
       console.error(
