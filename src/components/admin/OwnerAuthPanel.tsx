@@ -47,6 +47,9 @@ export const OwnerAuthPanel: React.FC = () => {
         'auth/weak-password': 'Choisissez un mot de passe d’au moins 6 caractères.',
         'auth/popup-closed-by-user': 'La fenêtre Google a été fermée avant la connexion.',
         'auth/unauthorized-domain': 'Ce domaine doit être autorisé dans les paramètres Firebase Authentication.',
+        'auth/operation-not-allowed': 'Cette méthode de connexion n’est pas activée dans Firebase Authentication.',
+        'auth/network-request-failed': 'Connexion réseau impossible. Vérifiez Internet puis réessayez.',
+        'auth/account-exists-with-different-credential': 'Cette adresse utilise déjà une autre méthode de connexion.',
         'auth/too-many-requests': 'Trop de tentatives. Réessayez plus tard.'
       };
       setError((code && known[code]) || (err instanceof Error ? err.message : 'Une erreur est survenue.'));
@@ -98,7 +101,7 @@ export const OwnerAuthPanel: React.FC = () => {
           <ShieldCheck className="h-5 w-5" />
         </div>
         <div>
-          <h3 className="text-sm font-bold text-slate-900">Compte propriétaire — authentification</h3>
+          <h3 className="text-sm font-bold text-slate-900">Compte cloud — authentification</h3>
           <p className="mt-1 text-xs leading-5 text-slate-500">
             Cette étape gère uniquement la connexion Firebase. Elle ne crée pas encore la boutique
             distante et ne lit ni n’écrit aucune donnée Firestore.
