@@ -405,3 +405,15 @@ test('Firebase adapter cannot bypass Firestore role rules', async () => {
     uid: cashierUid, emailVerified: true, storeId, role: 'cashier', active: true
   }));
 });
+
+test('membership lookup is limited to the caller own record or an owner listing members', async () => {
+  const ownerDb = dbFor(ownerUid);
+  const cashierDb = dbFor(cashierUid);
+
+  await assertSucceeds(getDoc(doc(ownerDb, 'stores', storeId, 'members', ownerUid)));
+  await assertSucceeds(getDoc(doc(cashierDb, 'stores', storeId, 'members', cashierUid)));
+  await assertFails(getDoc(doc(cashierDb, 'stores', storeId, 'members', ownerUid)));
+  await assertSucceeds(getDoc(doc(ownerDb, 'stores', storeId, 'members', cashierUid)));
+  await assertFails(getDoc(doc(cashierDb, 'stores', otherOwnerUid, 'members', otherOwnerUid)));
+  await assertFails(getDoc(collection(cashierDb, 'stores', storeId, 'members')));
+});
