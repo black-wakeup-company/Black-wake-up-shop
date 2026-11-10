@@ -107,7 +107,7 @@ export const createEmployeeAccount = async (input: CreateEmployeeInput) => {
     return { uid: employeeUid, email, displayName, role: input.role, verificationEmailSent };
   } catch (error) {
     if (employeeUid) {
-      console.error('Compte employé créé mais rattachement incomplet. Utilisez attachExistingEmployee avec cet UID.', employeeUid);
+      console.error('Le compte employé a été créé, mais son rattachement à la boutique a échoué. Vérifiez la console Firebase Auth avant toute nouvelle tentative.', employeeUid);
     }
     throw error;
   } finally {
@@ -119,41 +119,6 @@ export const createEmployeeAccount = async (input: CreateEmployeeInput) => {
       }
     }
   }
-};
-
-/**
- * Recovery path when Auth account creation succeeded but the Firestore
- * membership write failed. The employee must already exist in Firebase Auth.
- */
-export const attachExistingEmployee = async (input: {
-  storeId: string;
-  uid: string;
-  displayName: string;
-  email: string;
-  role: EmployeeRole;
-}) => {
-  const storeId = input.storeId.trim();
-  const uid = input.uid.trim();
-  const displayName = input.displayName.trim();
-  const email = input.email.trim().toLowerCase();
-  await requireOwner(storeId);
-  validateEmployee(displayName, email, input.role);
-  if (!uid || uid === storeId) throw new Error('Identifiant employé invalide.');
-
-  const memberRef = doc(db, 'stores', storeId, 'members', uid);
-  const existing = await getDoc(memberRef);
-  if (existing.exists()) throw new Error('Cet utilisateur est déjà rattaché à cette boutique.');
-
-  await setDoc(memberRef, {
-    uid,
-    role: input.role,
-    displayName,
-    email,
-    active: true,
-    createdAt: serverTimestamp()
-  });
-
-  return { uid, email, displayName, role: input.role };
 };
 
 /** Owner-only employee directory; Firestore rules enforce the permission. */
@@ -196,7 +161,7 @@ export const signInEmployeeWithEmail = async (input: {
   const email = input.email.trim().toLowerCase();
 
   if (!storeId) throw new Error('Le code de la boutique est obligatoire.');
-  if (!/^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$/.test(email)) {
+  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
     throw new Error('Adresse email invalide.');
   }
   if (!input.password) throw new Error('Le mot de passe est obligatoire.');
