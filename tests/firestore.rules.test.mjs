@@ -248,7 +248,16 @@ test('only the invited verified employee can activate a pending membership', asy
     active: true, status: 'active'
   }));
 
-  const verifiedEmployeeDb = dbFor(pendingUid, true);
+  const wrongEmailDb = env.authenticatedContext(pendingUid, {
+    email_verified: true, email: 'attacker@example.test'
+  }).firestore();
+  await assertFails(updateDoc(doc(wrongEmailDb, 'stores', storeId, 'members', pendingUid), {
+    active: true, status: 'active'
+  }));
+
+  const verifiedEmployeeDb = env.authenticatedContext(pendingUid, {
+    email_verified: true, email: 'pending@example.test'
+  }).firestore();
   await assertSucceeds(updateDoc(doc(verifiedEmployeeDb, 'stores', storeId, 'members', pendingUid), {
     active: true, status: 'active'
   }));
