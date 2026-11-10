@@ -181,3 +181,68 @@ export const updateEmployeeMember = async (
   }
   await updateDoc(doc(db, 'stores', storeId, 'members', uid), changes);
 };
+
+/**
+ * Employee sign-in uses the primary Firebase Auth instance so the active
+ * session is the identity evaluated by Firestore security rules.
+ * The boutique code is the owner's Firebase UID (storeId).
+ */
+export const signInEmployeeWithEmail = async (input: {
+  storeId: string;
+  email: string;
+  password: string;
+}) => {
+  const storeId = input.storeId.trim();
+  const email = input.email.trim().toLowerCase();
+
+  if (!storeId) throw new Error('Le code de la boutique est obligatoire.');
+  if (!/^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$/.test(email)) {
+    throw new Error('Adresse email invalide.');
+  }
+  if (!input.password) throw new Error('Le mot de passe est obligatoire.');
+
+  const { signInWithEmailAndPassword, reload } = await import('firebase/auth');
+  const credential = await signInWithEmailAndPassword(ownerAuth, email, input.password);
+  const user = credential.user;
+
+  try {
+    await reload(user);
+    if (!user.emailVerified) {
+      throw new Error('Votre adresse email n’est pas encore vérifiée. Ouvrez le lien reçu par email, puis reconnectez-vous.');
+    }
+
+    const membershipSnapshot = await getDoc(
+      doc(db, 'stores', storeId, 'members', user.uid)
+    );
+
+    if (!membershipSnapshot.exists()) {
+      throw new Error('Ce compte n’est pas associé à cette boutique. Vérifiez le code boutique auprès du propriétaire.');
+    }
+
+    const membership = membershipSnapshot.data();
+    if (membership.uid !== user.uid || membership.email?.toLowerCase() !== email) {
+      throw new Error('Les informations du compte ne correspondent pas à cette adhésion.');
+    }
+    if (membership.active !== true) {
+      throw new Error('Votre accès à cette boutique a été suspendu. Contactez le propriétaire.');
+    }
+    if (membership.role !== 'manager' && membership.role !== 'cashier') {
+      throw new Error('Ce compte n’a pas un rôle employé autorisé.');
+    }
+
+    return {
+      user,
+      storeId,
+      member: {
+        uid: user.uid,
+        role: membership.role as EmployeeRole,
+        displayName: membership.displayName || user.displayName || email,
+        email,
+        active: true
+      } satisfies EmployeeMember
+    };
+  } catch (error) {
+    await signOut(ownerAuth);
+    throw error;
+  }
+};
