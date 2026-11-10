@@ -144,6 +144,32 @@ test('stock movements are append-only and scoped to the active boutique', async 
 });
 
 
+test('document identity must match its Firestore key, including technical sales syncId', async () => {
+  const ownerDb = dbFor(ownerUid);
+  await assertFails(setDoc(doc(ownerDb, 'stores', storeId, 'products', 'product-key'), {
+    id: 'different-product-id', name: 'Mismatch'
+  }));
+  await assertSucceeds(setDoc(doc(ownerDb, 'stores', storeId, 'sales', 'sale-sync-key'), {
+    id: 'VTE-2026-0042', syncId: 'sale-sync-key', total: 100
+  }));
+  await assertFails(setDoc(doc(ownerDb, 'stores', storeId, 'sales', 'wrong-sync-key'), {
+    id: 'VTE-2026-0043', syncId: 'another-sync-key', total: 100
+  }));
+  await assertFails(setDoc(doc(ownerDb, 'stores', storeId, 'expenses', 'expense-key'), {
+    id: 'different-expense-id', amount: 100
+  }));
+});
+
+test('settings deletion is denied and cashiers cannot read expenses', async () => {
+  const ownerDb = dbFor(ownerUid);
+  await assertSucceeds(setDoc(doc(ownerDb, 'stores', storeId, 'settings', 'main'), {
+    boutiqueName: 'Boutique test'
+  }));
+  await assertFails(deleteDoc(doc(ownerDb, 'stores', storeId, 'settings', 'main')));
+  const cashierDb = dbFor(cashierUid);
+  await assertFails(getDoc(doc(cashierDb, 'stores', storeId, 'expenses', 'e1')));
+});
+
 test('Firebase adapter creates once and treats an identical retry as idempotent', async () => {
   const db = dbFor(ownerUid);
   const adapter = createFirebaseSyncAdapter(db);
