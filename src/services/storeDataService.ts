@@ -172,15 +172,13 @@ export const storeDataService = {
    * update/delete method: corrections must be represented by a new movement.
    */
   async listStockMovements(storeId: string, user?: User): Promise<StockMovement[]> {
-    const currentUser = requireAuthenticatedUser(user);
+    requireAuthenticatedUser(user);
     const snapshot = await getDocs(collection(db, 'stores', requireStoreId(storeId), 'stockMovements'));
     return snapshot.docs.map((item) => {
       const data = item.data();
-      if (data.id !== item.id || data.createdBy !== currentUser.uid) {
-        // Do not silently accept forged or malformed identity metadata.
-        if (data.id !== item.id || typeof data.createdBy !== 'string' || !data.createdBy) {
-          throw new Error(`Mouvement de stock incohérent : ${item.id}.`);
-        }
+      // A list may contain movements created by several active employees.
+      if (data.id !== item.id || typeof data.createdBy !== 'string' || !data.createdBy) {
+        throw new Error(`Mouvement de stock incohérent : ${item.id}.`);
       }
       return data as StockMovement;
     });
