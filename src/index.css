@@ -1,94 +1,95 @@
 @import "tailwindcss";
 
+/* BoutiquePro visual system — premium, calm and mobile-first */
+:root {
+  color-scheme: light;
+  --bp-ink: #10251f;
+  --bp-muted: #64756f;
+  --bp-green: #087f5b;
+  --bp-green-dark: #066447;
+  --bp-mint: #e8f7f0;
+  --bp-line: #e4ece8;
+  --bp-surface: #ffffff;
+  --bp-canvas: #f4f8f6;
+  --bp-shadow: 0 14px 38px rgba(16, 37, 31, .07);
+}
+
 @layer base {
+  * { -webkit-tap-highlight-color: transparent; }
+  html { min-width: 320px; scroll-behavior: smooth; }
   body {
-    font-family: 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
-    color: #0f172a;
-    background-color: #f8fafc;
+    font-family: 'Plus Jakarta Sans', Inter, system-ui, -apple-system, sans-serif;
+    color: var(--bp-ink);
+    background:
+      radial-gradient(ellipse at 8% 0%, rgba(16, 185, 129, .055), transparent 32rem),
+      var(--bp-canvas);
     -webkit-font-smoothing: antialiased;
+    text-rendering: optimizeLegibility;
   }
+  button, input, select, textarea { font: inherit; }
+  button { touch-action: manipulation; }
+  button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible, textarea:focus-visible {
+    outline: 3px solid rgba(16, 185, 129, .35);
+    outline-offset: 2px;
+  }
+  ::selection { background: rgba(16, 185, 129, .2); color: #10251f; }
+}
+
+@layer utilities {
+  .bp-glass {
+    background: rgba(255, 255, 255, .88);
+    border: 1px solid rgba(228, 236, 232, .9);
+    box-shadow: var(--bp-shadow);
+    backdrop-filter: blur(16px);
+  }
+  .bp-panel {
+    background: var(--bp-surface);
+    border: 1px solid var(--bp-line);
+    border-radius: 1.1rem;
+    box-shadow: 0 5px 20px rgba(16, 37, 31, .035);
+  }
+  .bp-eyebrow {
+    color: var(--bp-green);
+    font-size: .68rem;
+    font-weight: 800;
+    letter-spacing: .12em;
+    text-transform: uppercase;
+  }
+  .bp-scrollbar { scrollbar-width: thin; scrollbar-color: #cbd9d2 transparent; }
+  .bp-scrollbar::-webkit-scrollbar { width: 7px; height: 7px; }
+  .bp-scrollbar::-webkit-scrollbar-thumb { background: #cbd9d2; border-radius: 99px; }
+  .no-scrollbar { scrollbar-width: none; }
+  .no-scrollbar::-webkit-scrollbar { display: none; }
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  button, a, [role="button"] { transition-property: color, background-color, border-color, box-shadow, transform, opacity; transition-duration: 160ms; }
+}
+
+@media (max-width: 640px) {
+  body { font-size: 14px; }
 }
 
 @media print {
-  /* Set html & body to visible white page */
   html, body {
-    background-color: #ffffff !important;
-    background: #ffffff !important;
-    color: #000000 !important;
-    height: auto !important;
-    min-height: 100% !important;
-    overflow: visible !important;
-    margin: 0 !important;
-    padding: 0 !important;
+    background: #fff !important; color: #000 !important; height: auto !important;
+    min-height: 100% !important; overflow: visible !important; margin: 0 !important; padding: 0 !important;
   }
-
-  /* Hide regular UI elements */
-  header, footer, nav, button, .no-print {
-    display: none !important;
-    visibility: hidden !important;
-  }
-
-  /* Reset modal containers so they don't clip printable content */
+  header, footer, nav, button, .no-print { display: none !important; visibility: hidden !important; }
   .fixed, .relative, .absolute {
-    position: static !important;
-    overflow: visible !important;
-    height: auto !important;
-    max-height: none !important;
-    background: transparent !important;
-    box-shadow: none !important;
-    border: none !important;
-    padding: 0 !important;
-    margin: 0 !important;
+    position: static !important; overflow: visible !important; height: auto !important;
+    max-height: none !important; background: transparent !important; box-shadow: none !important;
+    border: none !important; padding: 0 !important; margin: 0 !important;
   }
-
-  /* Hide backdrop overlays */
-  .backdrop-blur-sm, .bg-slate-900\/60, .bg-slate-900\/70 {
-    background: transparent !important;
-  }
-
-  /* Ensure the printable document is displayed clearly */
+  .backdrop-blur-sm, .bg-slate-900\/60, .bg-slate-900\/70 { background: transparent !important; }
   #printable-document {
-    display: block !important;
-    visibility: visible !important;
-    width: 100% !important;
-    margin: 0 auto !important;
-    padding: 0 !important;
-    box-shadow: none !important;
-    border: none !important;
-    overflow: visible !important;
-    background: #ffffff !important;
-    color: #000000 !important;
+    display: block !important; visibility: visible !important; width: 100% !important;
+    margin: 0 auto !important; padding: 0 !important; box-shadow: none !important;
+    border: none !important; overflow: visible !important; background: #fff !important; color: #000 !important;
   }
-
-  #printable-document * {
-    visibility: visible !important;
-  }
-
-  /* Specific styles for thermal receipt format */
-  #printable-document.format-ticket {
-    max-width: 80mm !important;
-    width: 80mm !important;
-    margin: 0 auto !important;
-    padding: 4mm !important;
-    font-size: 11px !important;
-  }
-
-  /* Specific styles for standard A4 commercial invoice format */
-  #printable-document.format-facture {
-    max-width: 100% !important;
-    width: 100% !important;
-    padding: 8mm !important;
-    font-size: 12px !important;
-  }
-
-  /* Avoid unwanted page breaks inside table rows and totals */
-  .print-avoid-break {
-    page-break-inside: avoid !important;
-    break-inside: avoid !important;
-  }
-
-  @page {
-    margin: 6mm;
-    size: auto;
-  }
+  #printable-document * { visibility: visible !important; }
+  #printable-document.format-ticket { max-width: 80mm !important; width: 80mm !important; margin: 0 auto !important; padding: 4mm !important; font-size: 11px !important; }
+  #printable-document.format-facture { max-width: 100% !important; width: 100% !important; padding: 8mm !important; font-size: 12px !important; }
+  .print-avoid-break { page-break-inside: avoid !important; break-inside: avoid !important; }
+  @page { margin: 6mm; size: auto; }
 }
