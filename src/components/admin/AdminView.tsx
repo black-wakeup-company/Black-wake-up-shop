@@ -58,7 +58,7 @@ export const AdminView: React.FC<AdminViewProps> = ({ onOpenSettings, onSwitchTo
             </div>
 
             {/* Quick Actions: Return to POS, Cloud Backup & Lock */}
-            <div className="flex items-center gap-2">
+            <div className="flex flex-wrap items-center gap-2">
               <button
                 onClick={onOpenCloudSync}
                 className="flex items-center gap-2 px-3.5 py-2.5 text-xs font-bold text-white bg-emerald-500 hover:bg-emerald-400 rounded-xl transition-colors whitespace-nowrap shadow-lg shadow-black/10 cursor-pointer"
