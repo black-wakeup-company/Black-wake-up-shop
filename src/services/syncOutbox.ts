@@ -93,13 +93,29 @@ export const syncOutbox = {
       const transaction = database.transaction(STORE_NAME, 'readwrite');
       const store = transaction.objectStore(STORE_NAME);
       const existing = store.get(mutation.id);
+      let collision = false;
       existing.onsuccess = () => {
-        // Re-enqueueing the same id is a no-op, preventing duplicate local jobs.
-        if (!existing.result) store.add(mutation);
+        const previous = existing.result as PendingSyncMutation | undefined;
+        if (!previous) {
+          store.add(mutation);
+          return;
+        }
+        // An idempotency key may be replayed, but never reused for another intent.
+        const sameIntent = previous.storeId === mutation.storeId
+          && previous.entity === mutation.entity
+          && previous.operation === mutation.operation
+          && previous.documentId === mutation.documentId
+          && JSON.stringify(previous.payload ?? null) === JSON.stringify(mutation.payload ?? null);
+        if (!sameIntent) {
+          collision = true;
+          transaction.abort();
+        }
       };
       transaction.oncomplete = () => resolve();
       transaction.onerror = () => reject(transaction.error ?? new Error('Échec de mise en file.'));
-      transaction.onabort = () => reject(transaction.error ?? new Error('Mise en file annulée.'));
+      transaction.onabort = () => reject(collision
+        ? new Error('Cette clé d’idempotence est déjà utilisée pour une autre opération.')
+        : transaction.error ?? new Error('Mise en file annulée.'));
     });
   },
 
