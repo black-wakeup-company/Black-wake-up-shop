@@ -55,8 +55,8 @@ export const AdminPinModal: React.FC<AdminPinModalProps> = ({ isOpen, onClose, o
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/70 backdrop-blur-sm">
-      <div className="relative w-full max-w-xs bg-white rounded-2xl shadow-2xl overflow-hidden border border-slate-200 p-6 text-center">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/65 backdrop-blur-md">
+      <div className="relative w-full max-w-xs bg-white rounded-3xl shadow-2xl overflow-hidden border border-white/70 p-6 text-center">
         {/* Close */}
         <button
           onClick={onClose}
@@ -66,7 +66,7 @@ export const AdminPinModal: React.FC<AdminPinModalProps> = ({ isOpen, onClose, o
         </button>
 
         {/* Header */}
-        <div className="w-12 h-12 rounded-xl bg-slate-900 text-white flex items-center justify-center mx-auto mb-3 shadow-sm">
+        <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-emerald-600 to-emerald-950 text-white flex items-center justify-center mx-auto mb-3 shadow-sm">
           <ShieldCheck className="w-6 h-6 text-emerald-400" />
         </div>
 
