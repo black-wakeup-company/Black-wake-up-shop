@@ -28,6 +28,9 @@ export const BarcodeScannerModal: React.FC<BarcodeScannerModalProps> = ({
   const scannerRef = useRef<Html5Qrcode | null>(null);
   const readerElementId = 'barcode-camera-scanner-reader';
   const isComponentMounted = useRef(true);
+  const keyboardBufferRef = useRef('');
+  const lastKeyboardInputAtRef = useRef(0);
+  const lastScanAtRef = useRef(0);
 
   // Play a crisp POS scanner beep using Web Audio API
   const playBeep = () => {
@@ -56,11 +59,13 @@ export const BarcodeScannerModal: React.FC<BarcodeScannerModalProps> = ({
     const cleanCode = decodedText.trim();
     if (!cleanCode) return;
 
-    // Prevent immediate multiple triggers of identical barcode within 1.5s
-    if (cleanCode === lastScannedCode && isScanning) {
+    // Camera decoders may report the same frame repeatedly; allow a genuine
+    // second scan after the short duplicate-protection window.
+    const now = Date.now();
+    if (cleanCode === lastScannedCode && now - lastScanAtRef.current < 1500) {
       return;
     }
-
+    lastScanAtRef.current = now;
     setLastScannedCode(cleanCode);
     playBeep();
 
@@ -86,6 +91,54 @@ export const BarcodeScannerModal: React.FC<BarcodeScannerModalProps> = ({
       showToast(`Code "${cleanCode}" introuvable dans le catalogue`, 'warning');
     }
   };
+
+  // USB and Bluetooth HID barcode readers usually type the code like a
+  // keyboard and finish with Enter. Capture only fast key bursts outside
+  // editable fields so normal typing and the manual input remain untouched.
+  useEffect(() => {
+    if (!isOpen) {
+      keyboardBufferRef.current = '';
+      return;
+    }
+
+    const handleKeyboardScannerInput = (event: KeyboardEvent) => {
+      const target = event.target as HTMLElement | null;
+      const isEditable = !!target && (
+        target.isContentEditable ||
+        target.tagName === 'INPUT' ||
+        target.tagName === 'TEXTAREA' ||
+        target.tagName === 'SELECT'
+      );
+      if (isEditable || event.ctrlKey || event.altKey || event.metaKey) return;
+
+      if (event.key === 'Enter') {
+        const scannedCode = keyboardBufferRef.current;
+        keyboardBufferRef.current = '';
+        if (scannedCode.length >= 4) {
+          event.preventDefault();
+          handleBarcodeDetected(scannedCode);
+        }
+        return;
+      }
+
+      if (event.key.length !== 1) return;
+      const now = Date.now();
+      if (now - lastKeyboardInputAtRef.current > 100) {
+        keyboardBufferRef.current = '';
+      }
+      lastKeyboardInputAtRef.current = now;
+      keyboardBufferRef.current += event.key;
+      if (keyboardBufferRef.current.length > 64) {
+        keyboardBufferRef.current = '';
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyboardScannerInput);
+    return () => {
+      window.removeEventListener('keydown', handleKeyboardScannerInput);
+      keyboardBufferRef.current = '';
+    };
+  }, [isOpen, products, soundEnabled, lastScannedCode, isScanning]);
 
   const startScanner = async () => {
     try {
@@ -205,7 +258,7 @@ export const BarcodeScannerModal: React.FC<BarcodeScannerModalProps> = ({
             </div>
             <div>
               <h3 className="font-bold text-sm tracking-tight">Scanner de Code-barres</h3>
-              <p className="text-[11px] text-slate-300">Caméra active & Détection automatique</p>
+              <p className="text-[11px] text-slate-300">Caméra · Lecteur USB/Bluetooth · Saisie manuelle</p>
             </div>
           </div>
           <div className="flex items-center gap-1">
@@ -337,7 +390,7 @@ export const BarcodeScannerModal: React.FC<BarcodeScannerModalProps> = ({
           {/* Action buttons */}
           <div className="flex items-center justify-between pt-1">
             <span className="text-[11px] text-slate-500">
-              Compatible avec tous les codes-barres 1D et QR codes
+              Caméra, lecteur clavier USB/Bluetooth ou saisie manuelle
             </span>
             <button
               onClick={() => {
