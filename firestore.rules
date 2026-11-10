@@ -122,6 +122,7 @@ service cloud.firestore {
             signedIn()
             && request.auth.token.email_verified == true
             && request.auth.uid == memberUid
+            && request.auth.token.email == resource.data.email
             && resource.data.status == 'pending'
             && resource.data.active == false
             && request.resource.data.status == 'active'
