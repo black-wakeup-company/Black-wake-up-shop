@@ -54,8 +54,26 @@ test('records failures and removes a job only after acknowledgement', async () =
   assert.equal((await syncOutbox.listPending(item.storeId)).some(x => x.id === item.id), false);
 });
 
-test('rejects forbidden operations and malformed payloads', async () => {
+test('rejects forbidden operations, malformed payloads and mismatched document targets', async () => {
   await assert.rejects(syncOutbox.enqueue(mutation({ entity: 'stockMovements', operation: 'update' })));
   await assert.rejects(syncOutbox.enqueue(mutation({ entity: 'settings', operation: 'delete' })));
   await assert.rejects(syncOutbox.enqueue(mutation({ payload: [] })));
+  await assert.rejects(
+    syncOutbox.enqueue(mutation({ documentId: 'product-002' })),
+    /document ciblé/
+  );
+  await assert.rejects(
+    syncOutbox.enqueue(mutation({ entity: 'settings', documentId: 'other' })),
+    /document principal/
+  );
+});
+
+test('uses the technical sync id for sales while preserving the receipt number', async () => {
+  const item = mutation({
+    entity: 'sales',
+    documentId: 'sale-sync-001',
+    payload: { id: 'VTE-2026-0042', syncId: 'sale-sync-001', total: 2500 }
+  });
+  await syncOutbox.enqueue(item);
+  assert.deepEqual(await syncOutbox.listPending(item.storeId), [item]);
 });
