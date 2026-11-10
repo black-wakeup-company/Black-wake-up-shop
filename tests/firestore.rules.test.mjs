@@ -6,6 +6,7 @@ import {
   assertSucceeds,
   assertFails
 } from '@firebase/rules-unit-testing';
+import { createFirebaseSyncAdapter } from '../src/services/firebaseSyncAdapter.ts';
 import {
   collection,
   doc,
@@ -139,5 +140,68 @@ test('stock movements are append-only and scoped to the active boutique', async 
   await assertFails(deleteDoc(movementRef));
   await assertFails(setDoc(doc(db, 'stores', storeId, 'stockMovements', 'forged'), {
     ...movement, id: 'different-id'
+  }));
+});
+
+
+test('Firebase adapter creates once and treats an identical retry as idempotent', async () => {
+  const db = dbFor(ownerUid);
+  const adapter = createFirebaseSyncAdapter(db);
+  const actor = { uid: ownerUid, emailVerified: true, storeId, role: 'owner', active: true };
+  const mutation = {
+    id: 'job-product-1', storeId, entity: 'products', operation: 'create',
+    documentId: 'adapter-product-1',
+    payload: { id: 'adapter-product-1', name: 'Produit test', stockQuantity: 4 },
+    createdAt: new Date().toISOString(), attempts: 0
+  };
+
+  await assertSucceeds(adapter.apply(mutation, actor));
+  await assertSucceeds(adapter.apply(mutation, actor));
+  const saved = await getDoc(doc(db, 'stores', storeId, 'products', mutation.documentId));
+  assert.deepEqual(saved.data(), mutation.payload);
+});
+
+test('Firebase adapter rejects a conflicting create without overwriting existing data', async () => {
+  const db = dbFor(ownerUid);
+  const adapter = createFirebaseSyncAdapter(db);
+  const target = doc(db, 'stores', storeId, 'products', 'already-exists');
+  await setDoc(target, { id: 'already-exists', name: 'Valeur originale' });
+
+  const mutation = {
+    id: 'job-conflict-1', storeId, entity: 'products', operation: 'create',
+    documentId: 'already-exists',
+    payload: { id: 'already-exists', name: 'Valeur concurrente' },
+    createdAt: new Date().toISOString(), attempts: 0
+  };
+  await assert.rejects(adapter.apply(mutation, {
+    uid: ownerUid, emailVerified: true, storeId, role: 'owner', active: true
+  }), /Conflit de création/);
+
+  const saved = await getDoc(target);
+  assert.equal(saved.data().name, 'Valeur originale');
+});
+
+test('Firebase adapter leaves updates and deletes disabled', async () => {
+  const adapter = createFirebaseSyncAdapter(dbFor(ownerUid));
+  const actor = { uid: ownerUid, emailVerified: true, storeId, role: 'owner', active: true };
+  for (const operation of ['update', 'delete']) {
+    await assert.rejects(adapter.apply({
+      id: `job-${operation}`, storeId, entity: 'products', operation,
+      documentId: 'p1', payload: operation === 'update' ? { name: 'Nouveau' } : undefined,
+      createdAt: new Date().toISOString(), attempts: 0
+    }, actor), /contrôle de version/);
+  }
+});
+
+test('Firebase adapter cannot bypass Firestore role rules', async () => {
+  const adapter = createFirebaseSyncAdapter(dbFor(cashierUid));
+  const mutation = {
+    id: 'job-cashier-product', storeId, entity: 'products', operation: 'create',
+    documentId: 'forbidden-product',
+    payload: { id: 'forbidden-product', name: 'Interdit' },
+    createdAt: new Date().toISOString(), attempts: 0
+  };
+  await assert.rejects(adapter.apply(mutation, {
+    uid: cashierUid, emailVerified: true, storeId, role: 'cashier', active: true
   }));
 });
