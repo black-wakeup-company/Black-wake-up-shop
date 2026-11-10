@@ -195,7 +195,54 @@ test('employee membership creation requires every allowed field', async () => {
   }));
   await assertSucceeds(setDoc(doc(db, 'stores', storeId, 'members', 'complete'), {
     uid: 'complete', role: 'cashier', displayName: 'Complete',
-    email: 'complete@example.test', active: true, createdAt: serverTimestamp()
+    email: 'complete@example.test', active: false, status: 'pending', createdAt: serverTimestamp()
+  }));
+  await assertFails(setDoc(doc(db, 'stores', storeId, 'members', 'active-at-creation'), {
+    uid: 'active-at-creation', role: 'cashier', displayName: 'Unverified',
+    email: 'unverified-employee@example.test', active: true, status: 'active', createdAt: serverTimestamp()
+  }));
+});
+
+test('only the invited verified employee can activate a pending membership', async () => {
+  const pendingUid = 'pending-employee';
+  const ownerDb = dbFor(ownerUid);
+  const memberRef = doc(ownerDb, 'stores', storeId, 'members', pendingUid);
+  await assertSucceeds(setDoc(memberRef, {
+    uid: pendingUid, role: 'cashier', displayName: 'Pending Employee',
+    email: 'pending@example.test', active: false, status: 'pending', createdAt: serverTimestamp()
+  }));
+
+  const unverifiedEmployeeDb = dbFor(pendingUid, false);
+  await assertFails(updateDoc(doc(unverifiedEmployeeDb, 'stores', storeId, 'members', pendingUid), {
+    active: true, status: 'active'
+  }));
+
+  const verifiedEmployeeDb = dbFor(pendingUid, true);
+  await assertSucceeds(updateDoc(doc(verifiedEmployeeDb, 'stores', storeId, 'members', pendingUid), {
+    active: true, status: 'active'
+  }));
+  await assertFails(updateDoc(doc(verifiedEmployeeDb, 'stores', storeId, 'members', pendingUid), {
+    role: 'manager'
+  }));
+});
+
+test('owner can suspend but cannot activate a pending employee', async () => {
+  const ownerDb = dbFor(ownerUid);
+  const pendingUid = 'pending-suspend';
+  const memberRef = doc(ownerDb, 'stores', storeId, 'members', pendingUid);
+  await assertSucceeds(setDoc(memberRef, {
+    uid: pendingUid, role: 'cashier', displayName: 'Pending',
+    email: 'pending-suspend@example.test', active: false, status: 'pending', createdAt: serverTimestamp()
+  }));
+  await assertFails(updateDoc(memberRef, {
+    uid: pendingUid, role: 'cashier', displayName: 'Pending',
+    email: 'pending-suspend@example.test', active: true, status: 'active',
+    createdAt: (await getDoc(memberRef)).data().createdAt
+  }));
+  await assertSucceeds(updateDoc(memberRef, {
+    uid: pendingUid, role: 'cashier', displayName: 'Pending',
+    email: 'pending-suspend@example.test', active: false, status: 'suspended',
+    createdAt: (await getDoc(memberRef)).data().createdAt
   }));
 });
 
