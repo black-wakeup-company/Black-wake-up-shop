@@ -16,8 +16,8 @@ export interface OwnerStore {
  * Call only after the matching Firestore rules have been installed and tested.
  */
 export const getOrCreateOwnerStore = async (user: User): Promise<OwnerStore> => {
-  if (!user.uid || auth.currentUser?.uid !== user.uid) {
-    throw new Error('Une session propriétaire valide est nécessaire.');
+  if (!user.uid || auth.currentUser?.uid !== user.uid || !user.emailVerified) {
+    throw new Error('Une session propriétaire valide avec adresse e-mail vérifiée est nécessaire.');
   }
 
   const storeId = user.uid;
