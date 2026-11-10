@@ -64,6 +64,7 @@ service cloud.firestore {
       allow list: if false;
 
       allow create: if signedIn()
+        && request.auth.token.email_verified == true
         && request.auth.uid == storeId
         && request.resource.data.ownerUid == request.auth.uid
         && request.resource.data.keys().hasOnly([
@@ -86,7 +87,9 @@ service cloud.firestore {
         // Initial owner membership is created atomically with the store.
         allow create: if (
             signedIn()
+            && request.auth.token.email_verified == true
             && request.auth.uid == storeId
+            && !exists(/databases/$(database)/documents/stores/$(storeId))
             && memberUid == request.auth.uid
             && request.resource.data.uid == request.auth.uid
             && request.resource.data.role == 'owner'
@@ -167,8 +170,8 @@ service cloud.firestore {
       }
 
       match /settings/{documentId} {
-        allow read: if isActiveMember(storeId);
-        allow create, update: if hasRole(storeId, ['owner']);
+        allow read: if isActiveMember(storeId) && documentId == 'main';
+        allow create, update: if hasRole(storeId, ['owner']) && documentId == 'main';
         // Deletion is intentionally disabled to match the local outbox.
         allow delete: if false;
       }
