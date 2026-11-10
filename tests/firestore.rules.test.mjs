@@ -415,6 +415,7 @@ test('membership lookup is limited to the caller own record or an owner listing 
   await assertSucceeds(getDoc(doc(cashierDb, 'stores', storeId, 'members', cashierUid)));
   await assertFails(getDoc(doc(cashierDb, 'stores', storeId, 'members', ownerUid)));
   await assertSucceeds(getDoc(doc(ownerDb, 'stores', storeId, 'members', cashierUid)));
+  await assertSucceeds(getDocs(collection(ownerDb, 'stores', storeId, 'members')));
   await assertFails(getDoc(doc(cashierDb, 'stores', otherOwnerUid, 'members', otherOwnerUid)));
   await assertFails(getDocs(collection(cashierDb, 'stores', storeId, 'members')));
 });
