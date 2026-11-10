@@ -79,6 +79,21 @@ const validateMutation = (mutation: PendingSyncMutation): void => {
     && (mutation.payload === null || typeof mutation.payload !== 'object' || Array.isArray(mutation.payload))) {
     throw new Error('Contenu de synchronisation invalide.');
   }
+
+  // A queued payload must never silently target another document.
+  // Sales keep a human-readable receipt id and use syncId as their storage key.
+  if (mutation.payload && typeof mutation.payload.id === 'string') {
+    const payloadDocumentId = mutation.entity === 'sales'
+      && typeof mutation.payload.syncId === 'string'
+      ? mutation.payload.syncId
+      : mutation.payload.id;
+    if (payloadDocumentId !== mutation.documentId) {
+      throw new Error('Le document ciblé ne correspond pas à son identifiant dans le contenu.');
+    }
+  }
+  if (mutation.entity === 'settings' && mutation.documentId !== 'main') {
+    throw new Error('Les paramètres de boutique doivent cibler le document principal.');
+  }
 };
 
 /**
