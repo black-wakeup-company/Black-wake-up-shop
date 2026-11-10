@@ -23,7 +23,7 @@ const canonicalize = (value: unknown): unknown => {
     );
   }
   return value;
-});
+};
 
 const samePayload = (left: unknown, right: unknown): boolean =>
   JSON.stringify(canonicalize(left)) === JSON.stringify(canonicalize(right));
