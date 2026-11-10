@@ -95,6 +95,16 @@ export interface CashSession {
   notes?: string;
 }
 
+export interface StockMovement {
+  id: string;
+  productId: string;
+  quantityDelta: number;
+  reason: 'sale' | 'refund' | 'restock' | 'adjustment';
+  referenceId?: string;
+  createdAt: string;
+  createdBy: string;
+}
+
 export interface Cashier {
   id: string;
   name: string;
