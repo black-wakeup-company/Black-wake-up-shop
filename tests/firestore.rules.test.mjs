@@ -204,6 +204,10 @@ test('owner can change employee role and suspension cannot be self-reversed', as
   }));
 
   const createdAt = (await getDoc(memberRef)).data().createdAt;
+  await assertFails(updateDoc(doc(ownerDb, 'stores', storeId, 'members', employeeUid), {
+    uid: employeeUid, role: 'manager', displayName: 'Employee',
+    email: 'changed-address@example.test', active: true, status: 'active', createdAt
+  }));
   await assertSucceeds(updateDoc(doc(ownerDb, 'stores', storeId, 'members', employeeUid), {
     uid: employeeUid, role: 'manager', displayName: 'Employee',
     email: 'role-change@example.test', active: true, status: 'active', createdAt
