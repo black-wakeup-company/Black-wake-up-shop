@@ -73,7 +73,7 @@ export const CaisseWorkspace: React.FC<CaisseWorkspaceProps> = ({ onOpenAdmin })
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-2.5">
           <div className="flex flex-wrap items-center justify-between gap-3 text-xs">
             {/* Active Cashier Badge with Switch */}
-            <div className="flex items-center gap-2">
+            <div className="flex flex-wrap items-center gap-2">
               <button
                 onClick={() => setIsCashierSwitchOpen(true)}
                 className="flex items-center gap-2 px-3 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-800 rounded-lg transition-colors cursor-pointer"
@@ -108,7 +108,7 @@ export const CaisseWorkspace: React.FC<CaisseWorkspaceProps> = ({ onOpenAdmin })
             </div>
 
             {/* Quick Actions */}
-            <div className="flex items-center gap-2">
+            <div className="flex flex-wrap items-center gap-2">
               <button
                 onClick={() => setIsDailySalesOpen(true)}
                 className="flex items-center gap-1.5 px-2.5 sm:px-3 py-1.5 text-slate-700 bg-slate-100 hover:bg-slate-200 rounded-lg transition-colors cursor-pointer whitespace-nowrap"
