@@ -3,31 +3,42 @@
 ## Architecture retenue
 - Un compte Firebase propriétaire correspond à une boutique.
 - Le UID Firebase du propriétaire sert d'identifiant de boutique.
-- Les membres et les futures données métier sont isolés sous `stores/{storeId}`.
+- Les membres et les données métier sont isolés sous `stores/{storeId}`.
 - Firestore sera la source de synchronisation entre appareils.
 - Google Drive reste réservé aux sauvegardes et restaurations.
 - GitHub Pages reste l'hébergement.
+- Le projet reste compatible avec Firebase Spark gratuit ; aucune Cloud Function ni activation de facturation n'est prévue.
 
 ## Fondation ajoutée
+- `src/services/firebase.ts` : application Firebase principale et authentification propriétaire/employé.
+- `src/services/ownerAuth.ts` : connexion Google du propriétaire sans demander l'accès Google Drive.
+- `src/services/googleAuth.ts` : application Firebase secondaire dédiée à Google Drive.
 - `src/services/storeService.ts` : création transactionnelle ou vérification de l'espace propriétaire.
-- `src/services/ownerAuth.ts` : connexion Google Firebase du propriétaire sans demander l'accès Google Drive.
-- `src/components/auth/OwnerLoginScreen.tsx` : écran de connexion propriétaire au design premium, prêt à être intégré après validation du parcours sécurisé.
-- `firestore.rules` : règles initiales restrictives.
-- Ces fichiers ne sont pas encore raccordés à l'interface.
+- `src/services/storeDataService.ts` : accès Firestore explicitement limité à l'identifiant de boutique fourni.
+- `src/components/auth/OwnerLoginScreen.tsx` : écran de connexion propriétaire prêt à être intégré après validation du parcours complet.
+- `firestore.rules` : règles séparées par collection et rôle.
+
+## Modèle de rôles préparé
+- `owner` : contrôle complet de la boutique et des membres.
+- `manager` : gestion des produits, clients, ventes, dépenses et sessions de caisse ; pas de gestion des membres ni des paramètres globaux.
+- `cashier` : lecture des produits et données clients, création des ventes et gestion des sessions de caisse ; pas d'accès aux dépenses.
+- Un membre inactif n'a aucun accès aux données métier.
+- Les employés ne peuvent lire que leur propre document de membre ; seul le propriétaire peut lister et administrer les membres.
 
 ## Sécurité et activation
-Les règles actuelles autorisent uniquement la création initiale du propriétaire et bloquent toutes les collections métier. Ne les publiez pas encore dans Firebase et ne lancez pas le service depuis l'application. Les règles des produits, ventes, clients, dépenses, caisse, paramètres et employés doivent être conçues et testées avant la synchronisation.
+Les règles de rôle viennent d'être préparées dans le dépôt, mais elles ne sont **pas encore publiées dans Firebase**. Elles ne sont pas encore validées par des tests d'émulateur Firestore. Ne les publiez pas et ne raccordez pas encore les services à l'interface avant cette validation.
+Les contrôles du client ne remplacent jamais les règles Firestore côté serveur.
 
 ## Étapes suivantes
-1. Séparer la connexion propriétaire de l'autorisation Google Drive sans casser les sauvegardes.
-2. Créer et afficher l'espace boutique après authentification.
-3. Définir les permissions Firestore par collection et par rôle.
-4. Ajouter les comptes employés avec authentification email/mot de passe.
-5. Migrer progressivement les données locales, avec sauvegarde/restauration vérifiée.
-6. Tester plusieurs comptes et appareils avant toute mise en production.
+1. Valider les règles avec des tests positifs et négatifs : propriétaire, manager, caissier, membre désactivé et utilisateur d'une autre boutique.
+2. Ajouter la création des comptes employés email/mot de passe sans remplacer la session du propriétaire.
+3. Intégrer progressivement la connexion et le contexte boutique.
+4. Migrer les données locales uniquement après sauvegarde vérifiée et confirmation du propriétaire ; ne jamais importer les données de démonstration automatiquement.
+5. Tester plusieurs comptes et appareils avant toute mise en production.
 
 ## Contraintes du projet
 - Rester sur Firebase Spark gratuit : ne pas activer Blaze ni la facturation.
 - Développer uniquement sur `multiboutique-dev`.
 - Ne pas modifier `main` ni `backup-before-multiboutique`.
 - Préserver l'URL GitHub Pages et les fonctions existantes.
+- Ne pas modifier les deux parcours d'impression (ticket thermique et facture A4).
