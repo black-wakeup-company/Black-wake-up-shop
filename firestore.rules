@@ -29,6 +29,18 @@ service cloud.firestore {
       return hasRole(storeId, ['owner']) && request.auth.uid == storeId;
     }
 
+    function hasMatchingDocumentId(data, documentId, collectionName) {
+      // Sales keep a human-readable receipt id; syncId is the Firestore key
+      // whenever the technical identifier is present.
+      return collectionName == 'sales'
+        ? data.id is string
+          && data.id.size() > 0
+          && (data.keys().hasAny(['syncId'])
+            ? data.syncId == documentId
+            : data.id == documentId)
+        : data.id == documentId;
+    }
+
     function validEmployeeMember(memberUid) {
       return request.resource.data.keys().hasOnly([
           'uid', 'role', 'displayName', 'email', 'active', 'createdAt'
@@ -97,7 +109,8 @@ service cloud.firestore {
 
       match /products/{documentId} {
         allow read: if isActiveMember(storeId);
-        allow create, update: if hasRole(storeId, ['owner', 'manager']);
+        allow create, update: if hasRole(storeId, ['owner', 'manager'])
+          && hasMatchingDocumentId(request.resource.data, documentId, 'products');
         allow delete: if hasRole(storeId, ['owner', 'manager']);
       }
 
@@ -125,32 +138,39 @@ service cloud.firestore {
 
       match /customers/{documentId} {
         allow read: if isActiveMember(storeId);
-        allow create, update: if hasRole(storeId, ['owner', 'manager', 'cashier']);
+        allow create, update: if hasRole(storeId, ['owner', 'manager', 'cashier'])
+          && hasMatchingDocumentId(request.resource.data, documentId, 'customers');
         allow delete: if hasRole(storeId, ['owner', 'manager']);
       }
 
       match /sales/{documentId} {
         allow read: if isActiveMember(storeId);
-        allow create: if hasRole(storeId, ['owner', 'manager', 'cashier']);
-        allow update: if hasRole(storeId, ['owner', 'manager']);
+        allow create: if hasRole(storeId, ['owner', 'manager', 'cashier'])
+          && hasMatchingDocumentId(request.resource.data, documentId, 'sales');
+        allow update: if hasRole(storeId, ['owner', 'manager'])
+          && hasMatchingDocumentId(request.resource.data, documentId, 'sales');
         allow delete: if hasRole(storeId, ['owner']);
       }
 
       match /expenses/{documentId} {
-        allow read, create, update: if hasRole(storeId, ['owner', 'manager']);
+        allow read: if isActiveMember(storeId);
+        allow create, update: if hasRole(storeId, ['owner', 'manager'])
+          && hasMatchingDocumentId(request.resource.data, documentId, 'expenses');
         allow delete: if hasRole(storeId, ['owner']);
       }
 
       match /cashSessions/{documentId} {
         allow read: if isActiveMember(storeId);
-        allow create, update: if hasRole(storeId, ['owner', 'manager', 'cashier']);
+        allow create, update: if hasRole(storeId, ['owner', 'manager', 'cashier'])
+          && hasMatchingDocumentId(request.resource.data, documentId, 'cashSessions');
         allow delete: if hasRole(storeId, ['owner']);
       }
 
       match /settings/{documentId} {
         allow read: if isActiveMember(storeId);
         allow create, update: if hasRole(storeId, ['owner']);
-        allow delete: if hasRole(storeId, ['owner']);
+        // Deletion is intentionally disabled to match the local outbox.
+        allow delete: if false;
       }
 
       // Deny every not-yet-defined nested path by default.
