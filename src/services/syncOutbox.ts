@@ -65,6 +65,20 @@ const validateMutation = (mutation: PendingSyncMutation): void => {
   if (!['create', 'update', 'delete'].includes(mutation.operation)) {
     throw new Error('Opération de synchronisation invalide.');
   }
+  if (!['products', 'customers', 'sales', 'expenses', 'cashSessions', 'stockMovements', 'settings'].includes(mutation.entity)) {
+    throw new Error('Type de donnée à synchroniser invalide.');
+  }
+  if ((mutation.entity === 'stockMovements' && mutation.operation !== 'create')
+    || (mutation.entity === 'settings' && mutation.operation === 'delete')) {
+    throw new Error('Cette opération est interdite pour ce type de donnée.');
+  }
+  if (Number.isNaN(Date.parse(mutation.createdAt))) {
+    throw new Error('Date de création de la tâche invalide.');
+  }
+  if (mutation.payload !== undefined
+    && (mutation.payload === null || typeof mutation.payload !== 'object' || Array.isArray(mutation.payload))) {
+    throw new Error('Contenu de synchronisation invalide.');
+  }
 };
 
 /**
@@ -94,10 +108,10 @@ export const syncOutbox = {
     const database = await openDatabase();
     return new Promise((resolve, reject) => {
       const transaction = database.transaction(STORE_NAME, 'readonly');
-      const request = transaction.objectStore(STORE_NAME).getAll();
+      const range = IDBKeyRange.bound([storeId, ''], [storeId, '\\uffff']);
+      const request = transaction.objectStore(STORE_NAME).index('by-store-created').getAll(range);
       request.onsuccess = () => {
         const items = (request.result as PendingSyncMutation[])
-          .filter((item) => item.storeId === storeId)
           .sort((a, b) => a.createdAt.localeCompare(b.createdAt) || a.id.localeCompare(b.id));
         resolve(items);
       };
