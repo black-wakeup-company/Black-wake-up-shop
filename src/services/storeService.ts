@@ -1,6 +1,6 @@
 import { User } from 'firebase/auth';
 import { doc, getFirestore, runTransaction, serverTimestamp } from 'firebase/firestore';
-import { auth } from './googleAuth';
+import { auth } from './firebase';
 
 const db = getFirestore(auth.app);
 
