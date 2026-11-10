@@ -101,6 +101,28 @@ service cloud.firestore {
         allow delete: if hasRole(storeId, ['owner', 'manager']);
       }
 
+      // Stock movements are append-only audit records. Quantities are never
+      // overwritten here; a later sync process can reconcile each movement.
+      match /stockMovements/{movementId} {
+        allow read: if isActiveMember(storeId);
+        allow create: if hasRole(storeId, ['owner', 'manager', 'cashier'])
+          && request.resource.data.keys().hasOnly([
+            'id', 'productId', 'quantityDelta', 'reason', 'referenceId', 'createdAt', 'createdBy'
+          ])
+          && request.resource.data.keys().hasAll([
+            'id', 'productId', 'quantityDelta', 'reason', 'createdAt', 'createdBy'
+          ])
+          && request.resource.data.id == movementId
+          && request.resource.data.productId is string
+          && request.resource.data.productId.size() > 0
+          && request.resource.data.quantityDelta is number
+          && request.resource.data.quantityDelta != 0
+          && request.resource.data.reason in ['sale', 'refund', 'restock', 'adjustment']
+          && request.resource.data.createdAt is string
+          && request.resource.data.createdBy == request.auth.uid;
+        allow update, delete: if false;
+      }
+
       match /customers/{documentId} {
         allow read: if isActiveMember(storeId);
         allow create, update: if hasRole(storeId, ['owner', 'manager', 'cashier']);
