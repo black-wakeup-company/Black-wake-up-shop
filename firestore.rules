@@ -86,7 +86,10 @@ service cloud.firestore {
 
       match /members/{memberUid} {
         // Members can read only their own membership; owners can list members.
-        allow get: if (signedIn() && memberUid == request.auth.uid) || isStoreOwner(storeId);
+        allow get: if (signedIn()
+          && memberUid == request.auth.uid
+          && request.auth.token.email_verified == true
+          && resource.data.email == request.auth.token.email) || isStoreOwner(storeId);
         allow list: if isStoreOwner(storeId);
 
         // Initial owner membership is created atomically with the store.
