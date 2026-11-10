@@ -50,7 +50,8 @@ export interface SaleItem {
 export type PaymentMethod = 'especes' | 'carte' | 'mobile_money' | 'virement' | 'credit';
 
 export interface Sale {
-  id: string; // e.g. VTE-2026-0042
+  id: string; // Human-readable receipt number, e.g. VTE-2026-0042
+  syncId?: string; // Stable technical identity for future multi-device synchronization
   date: string;
   cashierName: string;
   customerId?: string;
