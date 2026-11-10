@@ -116,8 +116,8 @@ service cloud.firestore {
             && memberUid != request.auth.uid
             && validEmployeeMember(memberUid)
             && request.resource.data.createdAt == resource.data.createdAt
-            && !(request.resource.data.status == 'active'
-              && resource.data.status != 'active')
+            && (request.resource.data.active == false
+              || request.resource.data.active == resource.data.active)
           ) || (
             signedIn()
             && request.auth.token.email_verified == true
