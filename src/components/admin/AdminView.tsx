@@ -6,6 +6,7 @@ import { SalesView } from '../sales/SalesView';
 import { CustomersView } from '../customers/CustomersView';
 import { ExpensesView } from '../expenses/ExpensesView';
 import { StaffView } from './StaffView';
+import { MultiBoutiqueEmployeesView } from './MultiBoutiqueEmployeesView';
 import {
   BarChart3,
   Package,
@@ -20,7 +21,7 @@ import {
   Cloud
 } from 'lucide-react';
 
-export type AdminTab = 'reports' | 'inventory' | 'sales' | 'customers' | 'expenses' | 'staff';
+export type AdminTab = 'reports' | 'inventory' | 'sales' | 'customers' | 'expenses' | 'staff' | 'cloudEmployees';
 
 interface AdminViewProps {
   onOpenSettings: () => void;
@@ -38,7 +39,8 @@ export const AdminView: React.FC<AdminViewProps> = ({ onOpenSettings, onSwitchTo
     { id: 'sales', label: 'Journal des Ventes', icon: <Receipt className="w-4 h-4" /> },
     { id: 'customers', label: 'Clients & Crédits', icon: <Users className="w-4 h-4" /> },
     { id: 'expenses', label: 'Charges & Dépenses', icon: <Wallet className="w-4 h-4" /> },
-    { id: 'staff', label: 'Caissiers & Sécurité', icon: <UserCheck className="w-4 h-4" /> }
+    { id: 'staff', label: 'Caissiers & Sécurité', icon: <UserCheck className="w-4 h-4" /> },
+    { id: 'cloudEmployees', label: 'Employés multiboutique', icon: <Cloud className="w-4 h-4" /> }
   ];
 
   return (
@@ -118,6 +120,7 @@ export const AdminView: React.FC<AdminViewProps> = ({ onOpenSettings, onSwitchTo
         {adminTab === 'customers' && <CustomersView />}
         {adminTab === 'expenses' && <ExpensesView />}
         {adminTab === 'staff' && <StaffView />}
+        {adminTab === 'cloudEmployees' && <MultiBoutiqueEmployeesView />}
       </div>
     </div>
   );
