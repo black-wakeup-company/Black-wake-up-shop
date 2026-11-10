@@ -113,4 +113,4 @@ export const createFirebaseSyncAdapter = (database: Firestore = db): SyncAdapter
       transaction.set(target, payload);
     });
   }
-};
+});
