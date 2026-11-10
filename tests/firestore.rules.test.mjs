@@ -98,6 +98,50 @@ test('owner can provision a store and owner membership atomically on first login
   await assertSucceeds(getDoc(memberRef));
 });
 
+test('owner provisioning rejects an unverified account', async () => {
+  const unverifiedDb = dbFor('unverified-owner', false);
+  await assertFails(setDoc(doc(unverifiedDb, 'stores', 'unverified-owner'), {
+    ownerUid: 'unverified-owner', name: 'Nope', ownerEmail: 'unverified@example.test',
+    createdAt: serverTimestamp(), schemaVersion: 1
+  }));
+});
+
+test('owner provisioning refuses either incomplete pre-existing state', async () => {
+  const partialStoreUid = 'partial-store-owner';
+  const partialMemberUid = 'partial-member-owner';
+
+  await env.withSecurityRulesDisabled(async (context) => {
+    const adminDb = context.firestore();
+    await setDoc(doc(adminDb, 'stores', partialStoreUid), {
+      ownerUid: partialStoreUid, name: 'Partial store',
+      ownerEmail: 'partial@example.test', createdAt: new Date(), schemaVersion: 1
+    });
+    await setDoc(doc(adminDb, 'stores', partialMemberUid, 'members', partialMemberUid), {
+      ...member(partialMemberUid, 'owner')
+    });
+  });
+
+  const storeOnlyDb = dbFor(partialStoreUid);
+  await assertFails(setDoc(doc(storeOnlyDb, 'stores', partialStoreUid, 'members', partialStoreUid), {
+    uid: partialStoreUid, role: 'owner', displayName: 'Owner',
+    email: 'partial@example.test', active: true, createdAt: serverTimestamp()
+  }));
+
+  const memberOnlyDb = dbFor(partialMemberUid);
+  await assertFails(setDoc(doc(memberOnlyDb, 'stores', partialMemberUid), {
+    ownerUid: partialMemberUid, name: 'Must not be created',
+    ownerEmail: 'partial@example.test', createdAt: serverTimestamp(), schemaVersion: 1
+  }));
+});
+
+test('settings documents are restricted to the main document', async () => {
+  const ownerDb = dbFor(ownerUid);
+  await assertFails(setDoc(doc(ownerDb, 'stores', storeId, 'settings', 'extra'), {
+    boutiqueName: 'Unexpected settings'
+  }));
+  await assertFails(getDoc(doc(ownerDb, 'stores', storeId, 'settings', 'extra')));
+});
+
 test('owner can read own store and create products', async () => {
   const db = dbFor(ownerUid);
   await assertSucceeds(getDoc(doc(db, 'stores', storeId)));
