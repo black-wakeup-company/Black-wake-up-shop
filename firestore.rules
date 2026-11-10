@@ -153,7 +153,7 @@ service cloud.firestore {
       }
 
       match /expenses/{documentId} {
-        allow read: if isActiveMember(storeId);
+        allow read: if hasRole(storeId, ['owner', 'manager']);
         allow create, update: if hasRole(storeId, ['owner', 'manager'])
           && hasMatchingDocumentId(request.resource.data, documentId, 'expenses');
         allow delete: if hasRole(storeId, ['owner']);
