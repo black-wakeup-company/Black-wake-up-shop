@@ -10,6 +10,7 @@
 
 ## Fondation ajoutée
 - `src/services/storeService.ts` : création transactionnelle ou vérification de l'espace propriétaire.
+- `src/services/ownerAuth.ts` : connexion Google Firebase du propriétaire sans demander l'accès Google Drive.
 - `firestore.rules` : règles initiales restrictives.
 - Ces fichiers ne sont pas encore raccordés à l'interface.
 
