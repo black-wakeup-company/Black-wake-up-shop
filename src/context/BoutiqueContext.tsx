@@ -201,13 +201,13 @@ export const BoutiqueProvider: React.FC<{ children: React.ReactNode; storeId?: s
 
   const unlockScreen = (pin: string): boolean => {
     const cleanPin = pin.trim();
-    const cashierPin = activeCashier?.pin || '0000';
-    const adminPin = settings.adminPin || '1234';
+    const cashierPin = activeCashier?.pin || (isTenant ? '' : '0000');
+    const adminPin = settings.adminPin || (isTenant ? '' : '1234');
 
-    if (cleanPin === cashierPin || cleanPin === adminPin || cleanPin === '1234' || cleanPin === '0000') {
+    if ((cashierPin && cleanPin === cashierPin) || (adminPin && cleanPin === adminPin) || (!isTenant && (cleanPin === '1234' || cleanPin === '0000'))) {
       setIsScreenLocked(false);
       try {
-        localStorage.setItem('boutiquepro_is_locked', 'false');
+        localStorage.setItem(storageKey('WORKSPACE_MODE') + ':locked', 'false');
       } catch (e) {
         console.warn(e);
       }
@@ -225,7 +225,7 @@ export const BoutiqueProvider: React.FC<{ children: React.ReactNode; storeId?: s
       const saved = localStorage.getItem(storageKey('CASHIERS'));
       return saved ? JSON.parse(saved) : (isTenant && storeId ? [createOwnerCashier(storeId)] : DEFAULT_CASHIERS);
     } catch {
-      return DEFAULT_CASHIERS;
+      return isTenant && storeId ? [createOwnerCashier(storeId)] : DEFAULT_CASHIERS;
     }
   });
 
@@ -234,12 +234,14 @@ export const BoutiqueProvider: React.FC<{ children: React.ReactNode; storeId?: s
       const saved = localStorage.getItem(storageKey('ACTIVE_CASHIER'));
       if (saved) {
         const parsed = JSON.parse(saved);
-        const match = DEFAULT_CASHIERS.find((c) => c.id === parsed.id);
+        const match = isTenant && storeId
+          ? (parsed.id === `owner-${storeId}` ? createOwnerCashier(storeId) : undefined)
+          : DEFAULT_CASHIERS.find((c) => c.id === parsed.id);
         if (match) return match;
       }
       return isTenant && storeId ? createOwnerCashier(storeId) : DEFAULT_CASHIERS[0];
     } catch {
-      return DEFAULT_CASHIERS[0];
+      return isTenant && storeId ? createOwnerCashier(storeId) : DEFAULT_CASHIERS[0];
     }
   });
 
@@ -249,7 +251,7 @@ export const BoutiqueProvider: React.FC<{ children: React.ReactNode; storeId?: s
       const saved = localStorage.getItem(storageKey('PRODUCTS'));
       return saved ? JSON.parse(saved) : (isTenant ? [] : DEFAULT_PRODUCTS);
     } catch {
-      return DEFAULT_PRODUCTS;
+      return isTenant ? [] : DEFAULT_PRODUCTS;
     }
   });
 
@@ -259,7 +261,7 @@ export const BoutiqueProvider: React.FC<{ children: React.ReactNode; storeId?: s
       const saved = localStorage.getItem(storageKey('CUSTOMERS'));
       return saved ? JSON.parse(saved) : (isTenant ? [] : DEFAULT_CUSTOMERS);
     } catch {
-      return DEFAULT_CUSTOMERS;
+      return isTenant ? [] : DEFAULT_CUSTOMERS;
     }
   });
 
@@ -269,7 +271,7 @@ export const BoutiqueProvider: React.FC<{ children: React.ReactNode; storeId?: s
       const saved = localStorage.getItem(storageKey('SALES'));
       return saved ? JSON.parse(saved) : (isTenant ? [] : DEFAULT_SALES);
     } catch {
-      return DEFAULT_SALES;
+      return isTenant ? [] : DEFAULT_SALES;
     }
   });
 
@@ -279,7 +281,7 @@ export const BoutiqueProvider: React.FC<{ children: React.ReactNode; storeId?: s
       const saved = localStorage.getItem(storageKey('EXPENSES'));
       return saved ? JSON.parse(saved) : (isTenant ? [] : DEFAULT_EXPENSES);
     } catch {
-      return DEFAULT_EXPENSES;
+      return isTenant ? [] : DEFAULT_EXPENSES;
     }
   });
 
@@ -289,7 +291,7 @@ export const BoutiqueProvider: React.FC<{ children: React.ReactNode; storeId?: s
       const saved = localStorage.getItem(storageKey('SETTINGS'));
       return saved ? { ...(isTenant ? createEmptySettings() : DEFAULT_SETTINGS), ...JSON.parse(saved) } : (isTenant ? createEmptySettings() : DEFAULT_SETTINGS);
     } catch {
-      return DEFAULT_SETTINGS;
+      return isTenant ? createEmptySettings() : DEFAULT_SETTINGS;
     }
   });
 
