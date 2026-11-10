@@ -121,6 +121,67 @@ export const createEmployeeAccount = async (input: CreateEmployeeInput) => {
   }
 };
 
+/**
+ * Safely repairs an employee account created in Firebase Auth when the
+ * membership write failed. The employee must prove control of the account
+ * with its email/password; a caller-supplied UID alone is never trusted.
+ */
+export const recoverEmployeeMembership = async (input: {
+  storeId: string;
+  uid: string;
+  displayName: string;
+  email: string;
+  password: string;
+  role: EmployeeRole;
+}) => {
+  const storeId = input.storeId.trim();
+  const uid = input.uid.trim();
+  const displayName = input.displayName.trim();
+  const email = input.email.trim().toLowerCase();
+
+  await requireOwner(storeId);
+  validateEmployee(displayName, email, input.role);
+  if (!uid || uid === storeId) throw new Error('Identifiant employé invalide.');
+  if (!input.password) throw new Error('Le mot de passe de vérification est obligatoire.');
+
+  try {
+    const { signInWithEmailAndPassword } = await import('firebase/auth');
+    const credential = await signInWithEmailAndPassword(employeeAuth, email, input.password);
+    if (credential.user.uid !== uid || credential.user.email?.toLowerCase() !== email) {
+      throw new Error('Le compte authentifié ne correspond pas à l’identifiant et à l’adresse fournis.');
+    }
+
+    const memberRef = doc(db, 'stores', storeId, 'members', uid);
+    const existing = await getDoc(memberRef);
+    if (existing.exists()) {
+      throw new Error('Cet utilisateur est déjà rattaché à cette boutique.');
+    }
+
+    await setDoc(memberRef, {
+      uid,
+      role: input.role,
+      displayName,
+      email,
+      active: true,
+      createdAt: serverTimestamp()
+    });
+
+    let verificationEmailSent = true;
+    try {
+      await sendEmailVerification(credential.user);
+    } catch (error) {
+      verificationEmailSent = false;
+      console.warn('Adhésion réparée, mais email de vérification non envoyé.', error);
+    }
+
+    return { uid, email, displayName, role: input.role, verificationEmailSent };
+  } finally {
+    if (employeeAuth.currentUser) {
+      await signOut(employeeAuth);
+    }
+  }
+};
+
 /** Owner-only employee directory; Firestore rules enforce the permission. */
 export const listStoreEmployees = async (storeId: string): Promise<EmployeeMember[]> => {
   await requireOwner(storeId);
