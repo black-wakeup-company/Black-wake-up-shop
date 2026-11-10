@@ -55,10 +55,10 @@ export const GoogleDriveBackupModal: React.FC<GoogleDriveBackupModalProps> = ({
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-slate-900/70 backdrop-blur-sm overflow-y-auto">
-      <div className="relative w-full max-w-2xl bg-white rounded-2xl shadow-2xl overflow-hidden border border-slate-200 my-6">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-slate-950/70 backdrop-blur-md overflow-y-auto">
+      <div className="relative w-full max-w-2xl bg-white rounded-3xl shadow-2xl overflow-hidden border border-white/70 my-6">
         {/* Modal Top Ribbon */}
-        <div className="flex items-center justify-between px-5 sm:px-6 py-4 bg-slate-900 text-white">
+        <div className="flex items-center justify-between px-5 sm:px-6 py-4 bg-gradient-to-r from-[#10251f] to-[#075b43] text-white">
           <div className="flex items-center gap-2.5">
             <div className="w-8 h-8 rounded-lg bg-emerald-500/20 text-emerald-400 flex items-center justify-center border border-emerald-500/30">
               <Cloud className="w-4 h-4" />
