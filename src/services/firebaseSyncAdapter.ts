@@ -1,4 +1,4 @@
-import { doc, getFirestore, runTransaction } from 'firebase/firestore';
+import { doc, getFirestore, runTransaction, type Firestore } from 'firebase/firestore';
 import { auth } from './firebase';
 import type { PendingSyncMutation } from './syncOutbox';
 import type { SyncActor, SyncAdapter } from './syncCoordinator';
@@ -23,7 +23,7 @@ const canonicalize = (value: unknown): unknown => {
     );
   }
   return value;
-};
+});
 
 const samePayload = (left: unknown, right: unknown): boolean =>
   JSON.stringify(canonicalize(left)) === JSON.stringify(canonicalize(right));
@@ -86,7 +86,7 @@ const validatePayload = (
  * expected revision and the conflict policy is covered by tests.
  * This adapter is not connected to the UI or sync coordinator.
  */
-export const firebaseSyncAdapter: SyncAdapter = {
+export const createFirebaseSyncAdapter = (database: Firestore = db): SyncAdapter => ({
   async apply(mutation, actor) {
     if (mutation.storeId !== actor.storeId) {
       throw new Error('La mutation ne correspond pas à la boutique authentifiée.');
@@ -99,10 +99,10 @@ export const firebaseSyncAdapter: SyncAdapter = {
 
     const payload = validatePayload(mutation, actor);
     const target = mutation.entity === 'settings'
-      ? doc(db, 'stores', mutation.storeId, 'settings', 'main')
-      : doc(db, 'stores', mutation.storeId, mutation.entity, mutation.documentId);
+      ? doc(database, 'stores', mutation.storeId, 'settings', 'main')
+      : doc(database, 'stores', mutation.storeId, mutation.entity, mutation.documentId);
 
-    await runTransaction(db, async (transaction) => {
+    await runTransaction(database, async (transaction) => {
       const snapshot = await transaction.get(target);
       if (snapshot.exists()) {
         if (samePayload(snapshot.data(), payload)) return;
