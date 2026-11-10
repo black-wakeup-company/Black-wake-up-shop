@@ -90,7 +90,7 @@ export const StaffView: React.FC = () => {
   };
 
   return (
-    <div className="space-y-6">
+    <div className="bp-view space-y-6">
       {/* Top Banner & Quick Master PIN */}
       <div className="bg-white p-5 rounded-xl border border-slate-200 flex flex-col md:flex-row items-center justify-between gap-4">
         <div className="flex items-center gap-3">
