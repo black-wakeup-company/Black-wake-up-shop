@@ -115,6 +115,8 @@ service cloud.firestore {
             isStoreOwner(storeId)
             && memberUid != request.auth.uid
             && validEmployeeMember(memberUid)
+            && request.resource.data.uid == resource.data.uid
+            && request.resource.data.email == resource.data.email
             && request.resource.data.createdAt == resource.data.createdAt
             && (request.resource.data.active == false
               || request.resource.data.active == resource.data.active)
