@@ -42,17 +42,17 @@ export const AdminView: React.FC<AdminViewProps> = ({ onOpenSettings, onSwitchTo
   ];
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-5 sm:space-y-7">
       {/* Admin Subheader Toolbar */}
-      <div className="bg-slate-900 text-white border-b border-slate-800">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3.5">
+      <div className="relative overflow-hidden bg-gradient-to-br from-[#10251f] via-[#123d30] to-[#075b43] text-white shadow-xl shadow-emerald-950/10">
+        <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 sm:py-5">
           <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
             {/* Title & Badge */}
             <div className="flex items-center gap-3">
-              <span className="text-xs font-bold uppercase tracking-wider bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 px-2.5 py-1 rounded-md">
+              <span className="text-[10px] sm:text-[11px] font-extrabold uppercase tracking-[.14em] bg-white/10 text-emerald-100 border border-white/15 px-3 py-1.5 rounded-full backdrop-blur">
                 Espace Administration
               </span>
-              <span className="text-sm font-semibold text-slate-200">
+              <span className="text-sm font-semibold text-white/85">
                 {settings.boutiqueName} · Pilotage & Comptabilité
               </span>
             </div>
@@ -61,7 +61,7 @@ export const AdminView: React.FC<AdminViewProps> = ({ onOpenSettings, onSwitchTo
             <div className="flex items-center gap-2">
               <button
                 onClick={onOpenCloudSync}
-                className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-white bg-emerald-600 hover:bg-emerald-500 rounded-lg transition-colors whitespace-nowrap shadow-xs cursor-pointer"
+                className="flex items-center gap-2 px-3.5 py-2.5 text-xs font-bold text-white bg-emerald-500 hover:bg-emerald-400 rounded-xl transition-colors whitespace-nowrap shadow-lg shadow-black/10 cursor-pointer"
                 title="Sauvegarde et restauration Google Drive (Admin uniquement)"
               >
                 <Cloud className="w-3.5 h-3.5" />
@@ -70,7 +70,7 @@ export const AdminView: React.FC<AdminViewProps> = ({ onOpenSettings, onSwitchTo
 
               <button
                 onClick={onSwitchToCaisse}
-                className="flex items-center gap-1.5 px-3.5 py-1.5 text-xs font-semibold text-slate-900 bg-white hover:bg-slate-100 rounded-lg transition-colors whitespace-nowrap shadow-xs cursor-pointer"
+                className="flex items-center gap-2 px-3.5 py-2.5 text-xs font-extrabold text-emerald-950 bg-white hover:bg-emerald-50 rounded-xl transition-colors whitespace-nowrap shadow-lg shadow-black/10 cursor-pointer"
               >
                 <ShoppingBag className="w-3.5 h-3.5 text-emerald-600" />
                 <span>Ouvrir la Caisse (POS)</span>
@@ -78,7 +78,7 @@ export const AdminView: React.FC<AdminViewProps> = ({ onOpenSettings, onSwitchTo
 
               <button
                 onClick={lockAdmin}
-                className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-slate-300 bg-slate-800 hover:bg-slate-700 rounded-lg transition-colors whitespace-nowrap cursor-pointer"
+                className="flex items-center gap-1.5 px-3 py-2.5 text-xs font-semibold text-white/75 bg-white/10 hover:bg-white/15 border border-white/10 rounded-xl transition-colors whitespace-nowrap cursor-pointer"
                 title="Verrouiller la session administrateur"
               >
                 <Lock className="w-3.5 h-3.5" />
@@ -88,17 +88,17 @@ export const AdminView: React.FC<AdminViewProps> = ({ onOpenSettings, onSwitchTo
           </div>
 
           {/* Admin Navigation Pills */}
-          <div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar pt-3 mt-1 border-t border-slate-800">
+          <div className="flex items-center gap-2 overflow-x-auto no-scrollbar pt-4 mt-4 border-t border-white/15">
             {navItems.map((item) => {
               const isActive = adminTab === item.id;
               return (
                 <button
                   key={item.id}
                   onClick={() => setAdminTab(item.id)}
-                  className={`flex items-center gap-2 px-3.5 py-2 text-xs font-medium rounded-lg whitespace-nowrap shrink-0 transition-colors ${
+                  className={`flex items-center gap-2 px-4 py-2.5 text-xs font-bold rounded-xl whitespace-nowrap shrink-0 transition-all ${
                     isActive
-                      ? 'bg-slate-800 text-white border border-slate-700 shadow-xs'
-                      : 'text-slate-400 hover:text-white hover:bg-slate-800/50'
+                      ? 'bg-white text-emerald-950 border border-white shadow-lg shadow-black/10'
+                      : 'text-white/70 hover:text-white hover:bg-white/10 border border-transparent'
                   }`}
                 >
                   {item.icon}
@@ -111,7 +111,7 @@ export const AdminView: React.FC<AdminViewProps> = ({ onOpenSettings, onSwitchTo
       </div>
 
       {/* Admin Content Area */}
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pb-10">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pb-12 pt-1">
         {adminTab === 'reports' && <ReportsView />}
         {adminTab === 'inventory' && <InventoryView />}
         {adminTab === 'sales' && <SalesView />}
