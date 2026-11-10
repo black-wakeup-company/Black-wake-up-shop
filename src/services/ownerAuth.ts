@@ -4,7 +4,7 @@ import {
   signInWithPopup,
   User
 } from 'firebase/auth';
-import { auth } from './googleAuth';
+import { auth } from './firebase';
 
 /**
  * Owner sign-in uses Firebase Google authentication only.
