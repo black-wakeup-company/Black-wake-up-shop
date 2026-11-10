@@ -141,8 +141,10 @@ export const recoverEmployeeMembership = async (input: {
 
   await requireOwner(storeId);
   validateEmployee(displayName, email, input.role);
-  if (!uid || uid === storeId) throw new Error('Identifiant employé invalide.');
-  if (!input.password) throw new Error('Le mot de passe de vérification est obligatoire.');
+  if (!uid || uid === storeId || uid.includes('/')) throw new Error('Identifiant employé invalide.');
+  if (typeof input.password !== 'string' || !input.password) {
+    throw new Error('Le mot de passe de vérification est obligatoire.');
+  }
 
   try {
     const { signInWithEmailAndPassword } = await import('firebase/auth');
@@ -177,7 +179,12 @@ export const recoverEmployeeMembership = async (input: {
     return { uid, email, displayName, role: input.role, verificationEmailSent };
   } finally {
     if (employeeAuth.currentUser) {
-      await signOut(employeeAuth);
+      try {
+        await signOut(employeeAuth);
+      } catch (error) {
+        // Do not hide the provisioning/recovery result if temporary cleanup fails.
+        console.warn('La session temporaire de récupération employé n’a pas pu être fermée.', error);
+      }
     }
   }
 };
