@@ -1,4 +1,4 @@
-import { initializeApp, getApps, getApp } from 'firebase/app';
+import { getApp, getApps, initializeApp } from 'firebase/app';
 import {
   getAuth,
   signInWithPopup,
@@ -9,42 +9,36 @@ import {
 } from 'firebase/auth';
 import firebaseConfig from '../../firebase-applet-config.json';
 
-// Initialize Firebase App
-const app = getApps().length > 0 ? getApp() : initializeApp(firebaseConfig);
-export const auth = getAuth(app);
+// Drive uses a dedicated Firebase app/auth instance so connecting or
+// disconnecting Drive never changes the owner/employee session.
+const DRIVE_APP_NAME = 'boutiquepro-drive';
+const driveApp = getApps().some((item) => item.name === DRIVE_APP_NAME)
+  ? getApp(DRIVE_APP_NAME)
+  : initializeApp(firebaseConfig, DRIVE_APP_NAME);
+export const auth = getAuth(driveApp);
 
-// Google Drive file scope for backup & restore
+// Google Drive file scope for backup & restore.
 export const SCOPES = ['https://www.googleapis.com/auth/drive.file'];
 
 const provider = new GoogleAuthProvider();
 SCOPES.forEach((scope) => provider.addScope(scope));
-provider.setCustomParameters({
-  prompt: 'select_account'
-});
+provider.setCustomParameters({ prompt: 'select_account' });
 
 let isSigningIn = false;
 let cachedAccessToken: string | null = null;
 
-// Initialize auth state listener
 export const initAuth = (
   onAuthSuccess?: (user: User, token: string) => void,
   onAuthFailure?: () => void
-) => {
-  return onAuthStateChanged(auth, async (user: User | null) => {
-    if (user) {
-      if (cachedAccessToken) {
-        if (onAuthSuccess) onAuthSuccess(user, cachedAccessToken);
-      } else if (!isSigningIn) {
-        if (onAuthFailure) onAuthFailure();
-      }
-    } else {
-      cachedAccessToken = null;
-      if (onAuthFailure) onAuthFailure();
-    }
-  });
-};
+) => onAuthStateChanged(auth, (user: User | null) => {
+  if (user && cachedAccessToken) {
+    onAuthSuccess?.(user, cachedAccessToken);
+  } else {
+    if (!user) cachedAccessToken = null;
+    if (!isSigningIn) onAuthFailure?.();
+  }
+});
 
-// Sign in with Google to get Drive access token
 export const googleSignIn = async (): Promise<{ user: User; accessToken: string } | null> => {
   try {
     isSigningIn = true;
@@ -53,20 +47,17 @@ export const googleSignIn = async (): Promise<{ user: User; accessToken: string 
     if (!credential?.accessToken) {
       throw new Error('Impossible de récupérer le token Google Drive');
     }
-
     cachedAccessToken = credential.accessToken;
     return { user: result.user, accessToken: cachedAccessToken };
-  } catch (error: any) {
-    console.error('Google Sign-In Error:', error);
+  } catch (error) {
+    console.error('Google Drive Sign-In Error:', error);
     throw error;
   } finally {
     isSigningIn = false;
   }
 };
 
-export const getAccessToken = async (): Promise<string | null> => {
-  return cachedAccessToken;
-};
+export const getAccessToken = async (): Promise<string | null> => cachedAccessToken;
 
 export const logoutGoogle = async () => {
   await signOut(auth);
