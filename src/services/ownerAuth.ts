@@ -2,15 +2,13 @@ import {
   GoogleAuthProvider,
   onAuthStateChanged,
   signInWithPopup,
-  signOut,
   User
 } from 'firebase/auth';
 import { auth } from './googleAuth';
 
 /**
- * Owner authentication is deliberately separate from the Google Drive
- * backup flow. It requests Firebase Google sign-in only and does not ask
- * for Drive scopes.
+ * Owner sign-in uses Firebase Google authentication only.
+ * Unlike the Drive backup flow, this provider requests no Google Drive scope.
  */
 const ownerProvider = new GoogleAuthProvider();
 ownerProvider.setCustomParameters({ prompt: 'select_account' });
@@ -23,12 +21,3 @@ export const signInOwnerWithGoogle = async (): Promise<User> => {
 export const subscribeToOwnerAuth = (
   callback: (user: User | null) => void
 ) => onAuthStateChanged(auth, callback);
-
-/**
- * Signs out the Firebase owner session. Google Drive's cached token is
- * managed separately by googleAuth.ts; callers should disconnect Drive
- * explicitly when they want to revoke the local backup connection too.
- */
-export const signOutOwner = async (): Promise<void> => {
-  await signOut(auth);
-};
