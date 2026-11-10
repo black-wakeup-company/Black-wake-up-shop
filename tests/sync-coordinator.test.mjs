@@ -52,7 +52,7 @@ test('refuses unverified, inactive, or cross-store actors before writing', async
 
 test('enforces employee permissions and append-only stock movements', async () => {
   const cashierExpense = job({ entity: 'expenses' });
-  const cashierMovement = job({ entity: 'stockMovements', documentId: 'move-1', payload: { id: 'move-1' } });
+  const cashierMovement = job({ id: 'movement-job-1', entity: 'stockMovements', documentId: 'move-1', payload: { id: 'move-1' } });
   let writes = 0;
   const { state, coordinator } = harness([cashierExpense, cashierMovement], async () => { writes += 1; }, async () => actor({ role: 'cashier' }));
   const result = await coordinator.synchronize('store-1');
