@@ -610,13 +610,13 @@ export const PosView: React.FC = () => {
 
       {/* MOBILE STICKY FLOATING BOTTOM BAR (Visible on mobile/tablet when cart has items) */}
       {cart.length > 0 && !isMobileCartOpen && (
-        <div className="lg:hidden fixed bottom-0 left-0 right-0 z-30 p-3 bg-white/95 backdrop-blur-md border-t border-slate-200 shadow-2xl flex items-center justify-between gap-3">
+        <div className="lg:hidden fixed bottom-0 left-0 right-0 z-30 p-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] bg-white/95 backdrop-blur-xl border-t border-emerald-950/10 shadow-[0_-12px_35px_rgba(16,37,31,0.12)] flex items-center justify-between gap-3">
           <button
             type="button"
             onClick={() => setIsMobileCartOpen(true)}
             className="flex items-center gap-2.5 flex-1 min-w-0 text-left cursor-pointer"
           >
-            <div className="relative w-10 h-10 rounded-xl bg-slate-900 text-white flex items-center justify-center shrink-0">
+            <div className="relative w-11 h-11 rounded-2xl bg-gradient-to-br from-emerald-600 to-emerald-900 text-white flex items-center justify-center shrink-0 shadow-md shadow-emerald-900/15">
               <ShoppingBag className="w-5 h-5 text-emerald-400" />
               <span className="absolute -top-1.5 -right-1.5 bg-emerald-500 text-white text-[10px] font-bold w-5 h-5 rounded-full flex items-center justify-center border-2 border-white">
                 {cart.reduce((sum, it) => sum + it.quantity, 0)}
@@ -645,10 +645,10 @@ export const PosView: React.FC = () => {
 
       {/* MOBILE FULL DRAWER / BOTTOM SHEET FOR CART */}
       {isMobileCartOpen && (
-        <div className="lg:hidden fixed inset-0 z-50 flex flex-col justify-end bg-slate-900/60 backdrop-blur-sm">
-          <div className="w-full bg-white rounded-t-2xl shadow-2xl border-t border-slate-200 max-h-[85vh] flex flex-col overflow-hidden">
+        <div className="lg:hidden fixed inset-0 z-50 flex flex-col justify-end bg-slate-950/65 backdrop-blur-md">
+          <div className="w-full bg-white rounded-t-[1.75rem] shadow-2xl border-t border-emerald-100 max-h-[88vh] flex flex-col overflow-hidden">
             {/* Mobile Drawer Header */}
-            <div className="p-4 border-b border-slate-200 flex items-center justify-between bg-slate-50">
+            <div className="p-4 border-b border-slate-100 flex items-center justify-between bg-gradient-to-r from-emerald-50/80 to-white">
               <div className="flex items-center gap-2">
                 <ShoppingBag className="w-4 h-4 text-slate-900" />
                 <h3 className="font-bold text-sm text-slate-900">Ticket en cours</h3>
@@ -778,7 +778,7 @@ export const PosView: React.FC = () => {
             </div>
 
             {/* Mobile Cart Bottom Summary */}
-            <div className="p-4 bg-slate-50 border-t border-slate-200 space-y-2">
+            <div className="p-4 pb-[max(1rem,env(safe-area-inset-bottom))] bg-white border-t border-slate-100 space-y-2 shadow-[0_-8px_24px_rgba(16,37,31,0.05)]">
               <div className="flex justify-between items-center text-xs text-slate-600">
                 <span>Sous-total</span>
                 <span className="font-mono tabular-nums">{formatMoney(rawSubtotal)}</span>
