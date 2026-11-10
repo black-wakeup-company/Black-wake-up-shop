@@ -120,6 +120,11 @@ service cloud.firestore {
             && request.resource.data.createdAt == resource.data.createdAt
             && (request.resource.data.active == false
               || request.resource.data.active == resource.data.active)
+            && (
+              !resource.data.keys().hasAny(['status'])
+              || request.resource.data.status == resource.data.status
+              || request.resource.data.status == 'suspended'
+            )
           ) || (
             signedIn()
             && request.auth.token.email_verified == true
