@@ -188,6 +188,37 @@ test('owner alone can suspend an employee; employee cannot change own role', asy
   await assertFails(updateDoc(doc(cashierDb, 'stores', storeId, 'members', cashierUid), { role: 'manager' }));
 });
 
+test('owner can change employee role and suspension cannot be self-reversed', async () => {
+  const ownerDb = dbFor(ownerUid);
+  const employeeUid = 'role-change-employee';
+  const memberRef = doc(ownerDb, 'stores', storeId, 'members', employeeUid);
+  await assertSucceeds(setDoc(memberRef, {
+    uid: employeeUid, role: 'cashier', displayName: 'Employee',
+    email: 'role-change@example.test', active: false, status: 'pending',
+    createdAt: serverTimestamp()
+  }));
+
+  const employeeDb = dbFor(employeeUid, true);
+  await assertSucceeds(updateDoc(doc(employeeDb, 'stores', storeId, 'members', employeeUid), {
+    active: true, status: 'active'
+  }));
+
+  const createdAt = (await getDoc(memberRef)).data().createdAt;
+  await assertSucceeds(updateDoc(doc(ownerDb, 'stores', storeId, 'members', employeeUid), {
+    uid: employeeUid, role: 'manager', displayName: 'Employee',
+    email: 'role-change@example.test', active: true, status: 'active', createdAt
+  }));
+  await assertSucceeds(updateDoc(doc(ownerDb, 'stores', storeId, 'members', employeeUid), {
+    uid: employeeUid, role: 'manager', displayName: 'Employee',
+    email: 'role-change@example.test', active: false, status: 'suspended', createdAt
+  }));
+
+  await assertFails(updateDoc(doc(employeeDb, 'stores', storeId, 'members', employeeUid), {
+    active: true, status: 'active'
+  }));
+  await assertFails(deleteDoc(doc(employeeDb, 'stores', storeId, 'members', employeeUid)));
+});
+
 test('employee membership creation requires every allowed field', async () => {
   const db = dbFor(ownerUid);
   await assertFails(setDoc(doc(db, 'stores', storeId, 'members', 'incomplete'), {
