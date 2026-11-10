@@ -35,6 +35,9 @@ jobs:
       - name: TypeScript check
         run: npm run lint
 
+      - name: Local sync outbox tests
+        run: npm run test:outbox
+
       - name: Firestore rules emulator tests
         run: npm run test:rules
 
