@@ -1,4 +1,5 @@
 import React from 'react';
+import { OwnerAuthPanel } from './OwnerAuthPanel';
 import {
   Cloud,
   ShieldCheck,
