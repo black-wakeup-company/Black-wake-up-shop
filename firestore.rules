@@ -1,0 +1,58 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+    function signedIn() {
+      return request.auth != null;
+    }
+
+    function isStoreOwner(storeId) {
+      return signedIn()
+        && request.auth.uid == storeId
+        && exists(/databases/$(database)/documents/stores/$(storeId)/members/$(request.auth.uid))
+        && get(/databases/$(database)/documents/stores/$(storeId)/members/$(request.auth.uid)).data.role == 'owner'
+        && get(/databases/$(database)/documents/stores/$(storeId)/members/$(request.auth.uid)).data.active == true;
+    }
+
+    match /stores/{storeId} {
+      // A store ID is the owner's Firebase UID.
+      allow create: if signedIn()
+        && request.auth.uid == storeId
+        && request.resource.data.ownerUid == request.auth.uid;
+
+      allow get: if isStoreOwner(storeId);
+      allow list: if false;
+
+      allow update: if isStoreOwner(storeId)
+        && request.resource.data.ownerUid == resource.data.ownerUid
+        && request.resource.data.ownerUid == request.auth.uid;
+
+      allow delete: if false;
+
+      match /members/{memberUid} {
+        // The initial owner membership must be created atomically with its store.
+        allow create: if signedIn()
+          && request.auth.uid == storeId
+          && memberUid == request.auth.uid
+          && request.resource.data.uid == request.auth.uid
+          && request.resource.data.role == 'owner'
+          && request.resource.data.active == true
+          && getAfter(/databases/$(database)/documents/stores/$(storeId)).data.ownerUid == request.auth.uid;
+
+        allow read: if isStoreOwner(storeId);
+        // Owner membership cannot be edited or deleted from the client.
+        allow update, delete: if false;
+      }
+
+      // Products, sales, customers, expenses, staff and settings stay
+      // inaccessible until their role-specific rules are implemented.
+      match /{document=**} {
+        allow read, write: if false;
+      }
+    }
+
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}
