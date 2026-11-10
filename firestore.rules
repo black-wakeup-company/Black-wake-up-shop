@@ -33,6 +33,9 @@ service cloud.firestore {
       return request.resource.data.keys().hasOnly([
           'uid', 'role', 'displayName', 'email', 'active', 'createdAt'
         ])
+        && request.resource.data.keys().hasAll([
+          'uid', 'role', 'displayName', 'email', 'active', 'createdAt'
+        ])
         && request.resource.data.uid == memberUid
         && request.resource.data.role in ['manager', 'cashier']
         && request.resource.data.displayName is string
