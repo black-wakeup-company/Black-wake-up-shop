@@ -1,4 +1,4 @@
-import { reload, type User } from 'firebase/auth';
+import { getIdToken, reload, type User } from 'firebase/auth';
 import { doc, getDoc, getFirestore } from 'firebase/firestore';
 import { app, auth } from './firebase';
 
@@ -28,6 +28,8 @@ export const resolveOwnerMembership = async (
   }
 
   await reload(candidateUser);
+  // Refresh the ID token too: Firestore rules evaluate email_verified from its claims.
+  await getIdToken(candidateUser, true);
 
   if (auth.currentUser?.uid !== candidateUser.uid) {
     throw new Error('La session Firebase a changé pendant la vérification.');
