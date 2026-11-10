@@ -415,8 +415,8 @@ export const BoutiqueProvider: React.FC<{ children: React.ReactNode; storeId?: s
   };
 
   const unlockAdmin = (pin: string): boolean => {
-    const validPin = settings.adminPin || '1234';
-    if (pin.trim() === validPin) {
+    const validPin = settings.adminPin || (isTenant ? '' : '1234');
+    if (validPin && pin.trim() === validPin) {
       setIsAdminUnlocked(true);
       setWorkspaceModeState('admin');
       showToast('Espace Administration déverrouillé avec succès', 'success');
