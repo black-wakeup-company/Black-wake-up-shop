@@ -63,7 +63,7 @@ beforeEach(async () => {
 });
 
 const dbFor = (uid, email_verified = true) =>
-  env.authenticatedContext(uid, { email_verified }).firestore();
+  env.authenticatedContext(uid, { email_verified, email: `${uid}@example.test` }).firestore();
 
 test('owner can provision a store and owner membership atomically on first login', async () => {
   const newOwnerUid = 'new-owner-1';
@@ -407,12 +407,18 @@ test('Firebase adapter cannot bypass Firestore role rules', async () => {
   }));
 });
 
-test('membership lookup is limited to the caller own record or an owner listing members', async () => {
+test('membership lookup is limited to verified matching email, own record, or owner listing', async () => {
   const ownerDb = dbFor(ownerUid);
   const cashierDb = dbFor(cashierUid);
+  const unverifiedCashierDb = dbFor(cashierUid, false);
+  const wrongEmailCashierDb = env.authenticatedContext(cashierUid, {
+    email_verified: true, email: 'attacker@example.test'
+  }).firestore();
 
   await assertSucceeds(getDoc(doc(ownerDb, 'stores', storeId, 'members', ownerUid)));
   await assertSucceeds(getDoc(doc(cashierDb, 'stores', storeId, 'members', cashierUid)));
+  await assertFails(getDoc(doc(unverifiedCashierDb, 'stores', storeId, 'members', cashierUid)));
+  await assertFails(getDoc(doc(wrongEmailCashierDb, 'stores', storeId, 'members', cashierUid)));
   await assertFails(getDoc(doc(cashierDb, 'stores', storeId, 'members', ownerUid)));
   await assertSucceeds(getDoc(doc(ownerDb, 'stores', storeId, 'members', cashierUid)));
   await assertSucceeds(getDocs(collection(ownerDb, 'stores', storeId, 'members')));
