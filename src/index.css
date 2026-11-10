@@ -140,3 +140,22 @@
     transform: none;
   }
 }
+
+
+/* Cross-device layout safeguards for narrow phones and wide desktop workspaces */
+@layer utilities {
+  .bp-view { min-width: 0; }
+  .bp-view .overflow-x-auto {
+    max-width: 100%;
+    -webkit-overflow-scrolling: touch;
+    overscroll-behavior-inline: contain;
+  }
+  .bp-view table { min-width: 100%; }
+  @media (max-width: 420px) {
+    .bp-view { padding-left: .75rem; padding-right: .75rem; }
+    .bp-view .bp-panel { border-radius: .9rem; }
+  }
+  @media (min-width: 1280px) {
+    .bp-view { font-size: .96rem; }
+  }
+}
