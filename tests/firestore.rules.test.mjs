@@ -14,7 +14,8 @@ import {
   setDoc,
   updateDoc,
   deleteDoc,
-  serverTimestamp
+  serverTimestamp,
+  runTransaction
 } from 'firebase/firestore';
 
 const projectId = 'demo-boutiquepro';
@@ -62,6 +63,40 @@ beforeEach(async () => {
 
 const dbFor = (uid, email_verified = true) =>
   env.authenticatedContext(uid, { email_verified }).firestore();
+
+test('owner can provision a store and owner membership atomically on first login', async () => {
+  const newOwnerUid = 'new-owner-1';
+  const db = dbFor(newOwnerUid);
+  const storeRef = doc(db, 'stores', newOwnerUid);
+  const memberRef = doc(db, 'stores', newOwnerUid, 'members', newOwnerUid);
+
+  await assertSucceeds(runTransaction(db, async (transaction) => {
+    const [storeSnapshot, memberSnapshot] = await Promise.all([
+      transaction.get(storeRef),
+      transaction.get(memberRef)
+    ]);
+    assert.equal(storeSnapshot.exists(), false);
+    assert.equal(memberSnapshot.exists(), false);
+    transaction.set(storeRef, {
+      ownerUid: newOwnerUid,
+      name: 'Ma boutique',
+      ownerEmail: 'new-owner@example.test',
+      createdAt: serverTimestamp(),
+      schemaVersion: 1
+    });
+    transaction.set(memberRef, {
+      uid: newOwnerUid,
+      role: 'owner',
+      displayName: 'Propriétaire',
+      email: 'new-owner@example.test',
+      active: true,
+      createdAt: serverTimestamp()
+    });
+  }));
+
+  await assertSucceeds(getDoc(storeRef));
+  await assertSucceeds(getDoc(memberRef));
+});
 
 test('owner can read own store and create products', async () => {
   const db = dbFor(ownerUid);
