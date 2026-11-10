@@ -230,7 +230,7 @@ export const PosView: React.FC = () => {
         {/* LEFT COLUMN: Catalog & Fast Search */}
         <div className="lg:col-span-7 xl:col-span-8 space-y-4">
           {/* Search bar & Category filter */}
-          <div className="bg-white p-4 rounded-xl border border-slate-200 space-y-3">
+          <div className="bp-panel p-4 sm:p-5 space-y-3">
             <div className="flex items-center gap-2">
               <form onSubmit={handleBarcodeSubmit} className="flex-1 flex items-center gap-2">
                 <div className="relative flex-1">
@@ -241,7 +241,7 @@ export const PosView: React.FC = () => {
                     placeholder="Rechercher par nom, SKU ou code-barres (Appuyez sur Entrée)..."
                     value={searchTerm}
                     onChange={(e) => setSearchTerm(e.target.value)}
-                    className="w-full pl-9 pr-24 py-2 text-sm bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-slate-900 focus:bg-white transition-all"
+                    className="w-full pl-9 pr-24 py-3 text-sm bg-slate-50/80 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-600/20 focus:border-emerald-500 focus:bg-white transition-all"
                   />
                   <button
                     type="button"
@@ -272,7 +272,7 @@ export const PosView: React.FC = () => {
               <button
                 type="button"
                 onClick={() => setIsCameraScannerOpen(true)}
-                className="flex items-center gap-1.5 px-3 py-2 text-xs font-bold text-white bg-emerald-600 hover:bg-emerald-500 rounded-lg shadow-2xs transition-colors shrink-0 cursor-pointer"
+                className="flex items-center gap-1.5 px-3.5 py-3 text-xs font-extrabold text-white bg-gradient-to-br from-emerald-600 to-emerald-700 hover:from-emerald-500 hover:to-emerald-600 rounded-xl shadow-md shadow-emerald-900/10 transition-all shrink-0 cursor-pointer"
                 title="Scanner avec la caméra du téléphone ou du PC"
               >
                 <Camera className="w-4 h-4" />
@@ -290,8 +290,8 @@ export const PosView: React.FC = () => {
                     onClick={() => setSelectedCategory(cat)}
                     className={`px-3 py-1.5 text-xs font-medium rounded-lg whitespace-nowrap shrink-0 transition-colors ${
                       isSelected
-                        ? 'bg-slate-900 text-white'
-                        : 'bg-slate-100 text-slate-600 hover:bg-slate-200 hover:text-slate-900'
+                        ? 'bg-emerald-700 text-white shadow-md shadow-emerald-900/10'
+                        : 'bg-slate-100 text-slate-600 hover:bg-emerald-50 hover:text-emerald-800'
                     }`}
                   >
                     {cat === 'all' ? 'Toutes les catégories' : cat}
@@ -311,14 +311,14 @@ export const PosView: React.FC = () => {
                 <div
                   key={product.id}
                   onClick={() => addToCart(product, 1)}
-                  className={`group relative bg-white border rounded-xl overflow-hidden cursor-pointer transition-all hover:shadow-md flex flex-col justify-between ${
+                  className={`group relative bg-white border rounded-2xl overflow-hidden cursor-pointer transition-all duration-200 hover:-translate-y-0.5 hover:shadow-xl hover:shadow-emerald-950/10 flex flex-col justify-between ${
                     inStock
-                      ? 'border-slate-200 hover:border-slate-400'
+                      ? 'border-slate-200 hover:border-emerald-400'
                       : 'border-slate-200 opacity-60 bg-slate-50'
                   }`}
                 >
                   {/* Image container */}
-                  <div className="relative aspect-4/3 w-full bg-slate-100 overflow-hidden">
+                  <div className="relative aspect-4/3 w-full bg-gradient-to-br from-emerald-50 to-slate-100 overflow-hidden">
                     {product.image ? (
                       <img
                         src={product.image}
@@ -352,7 +352,7 @@ export const PosView: React.FC = () => {
                   </div>
 
                   {/* Body */}
-                  <div className="p-3 flex-1 flex flex-col justify-between">
+                  <div className="p-3.5 flex-1 flex flex-col justify-between">
                     <div>
                       <div className="flex items-center gap-1.5 text-[11px] text-slate-500 mb-1">
                         <span>{product.category}</span>
@@ -373,7 +373,7 @@ export const PosView: React.FC = () => {
                           ~ {(product.salePrice / exchangeRateUSD).toFixed(2)} $
                         </span>
                       </div>
-                      <span className="w-6 h-6 rounded-md bg-slate-100 group-hover:bg-slate-900 group-hover:text-white flex items-center justify-center transition-colors">
+                      <span className="w-8 h-8 rounded-xl bg-emerald-50 group-hover:bg-emerald-600 group-hover:text-white flex items-center justify-center transition-colors shadow-sm">
                         <Plus className="w-3.5 h-3.5 text-slate-700 group-hover:text-white" />
                       </span>
                     </div>
@@ -402,9 +402,9 @@ export const PosView: React.FC = () => {
         </div>
 
         {/* RIGHT COLUMN: Desktop Ticket en cours */}
-        <div className="hidden lg:flex lg:col-span-5 xl:col-span-4 bg-white rounded-xl border border-slate-200 shadow-sm flex-col sticky top-20 max-h-[calc(100vh-6rem)]">
+        <div className="hidden lg:flex lg:col-span-5 xl:col-span-4 bg-white rounded-2xl border border-emerald-950/10 shadow-xl shadow-emerald-950/5 flex-col sticky top-20 max-h-[calc(100vh-6rem)] overflow-hidden">
           {/* Cart Header */}
-          <div className="p-4 border-b border-slate-200 space-y-3">
+          <div className="p-4 border-b border-slate-100 bg-gradient-to-r from-emerald-50/70 to-white space-y-3">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
                 <ShoppingBag className="w-4 h-4 text-slate-900" />
@@ -813,10 +813,10 @@ export const PosView: React.FC = () => {
 
       {/* CHECKOUT MODAL */}
       {isCheckoutOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm">
-          <div className="relative w-full max-w-lg bg-white rounded-2xl shadow-2xl overflow-hidden border border-slate-200">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/65 backdrop-blur-md">
+          <div className="relative w-full max-w-lg bg-white rounded-3xl shadow-2xl overflow-hidden border border-white/70">
             {/* Modal Header */}
-            <div className="flex items-center justify-between px-6 py-4 border-b border-slate-200">
+            <div className="flex items-center justify-between px-6 py-5 border-b border-slate-100 bg-gradient-to-r from-emerald-50/80 to-white">
               <div>
                 <h3 className="font-bold text-base text-slate-900">Règlement & Encaissement</h3>
                 <p className="text-xs text-slate-500 mt-0.5">
@@ -847,8 +847,8 @@ export const PosView: React.FC = () => {
                     }}
                     className={`px-3 py-1.5 text-xs font-bold rounded-md transition-all cursor-pointer ${
                       paidCurrency === 'FC'
-                        ? 'bg-slate-900 text-white shadow-2xs'
-                        : 'text-slate-600 hover:text-slate-900'
+                        ? 'bg-emerald-700 text-white shadow-sm'
+                        : 'text-slate-600 hover:text-emerald-800'
                     }`}
                   >
                     Franc Congolais (FC)
@@ -871,7 +871,7 @@ export const PosView: React.FC = () => {
               </div>
 
               {/* Grand Total Display */}
-              <div className="bg-slate-50 p-4 rounded-xl border border-slate-200 text-center">
+              <div className="bg-gradient-to-br from-emerald-50 via-white to-slate-50 p-5 rounded-2xl border border-emerald-100 text-center shadow-inner">
                 <span className="text-xs uppercase font-medium text-slate-500 tracking-wider">
                   Montant total à régler ({paidCurrency})
                 </span>
@@ -896,8 +896,8 @@ export const PosView: React.FC = () => {
                     onClick={() => setPaymentMethod('especes')}
                     className={`p-3 rounded-xl border text-center transition-all flex flex-col items-center gap-1.5 cursor-pointer ${
                       paymentMethod === 'especes'
-                        ? 'border-slate-900 bg-slate-900 text-white font-semibold'
-                        : 'border-slate-200 hover:bg-slate-50 text-slate-700'
+                        ? 'border-emerald-700 bg-emerald-700 text-white font-semibold shadow-md shadow-emerald-900/10'
+                        : 'border-slate-200 hover:border-emerald-200 hover:bg-emerald-50/50 text-slate-700'
                     }`}
                   >
                     <Banknote className="w-4 h-4" />
