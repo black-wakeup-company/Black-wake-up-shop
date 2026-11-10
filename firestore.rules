@@ -6,21 +6,40 @@ service cloud.firestore {
       return request.auth != null;
     }
 
+    function memberPath(storeId, memberUid) {
+      return /databases/$(database)/documents/stores/$(storeId)/members/$(memberUid);
+    }
+
     function isActiveMember(storeId) {
       return signedIn()
-        && exists(/databases/$(database)/documents/stores/$(storeId)/members/$(request.auth.uid))
-        && get(/databases/$(database)/documents/stores/$(storeId)/members/$(request.auth.uid)).data.active == true;
+        && exists(memberPath(storeId, request.auth.uid))
+        && get(memberPath(storeId, request.auth.uid)).data.active == true;
+    }
+
+    function memberRole(storeId) {
+      return get(memberPath(storeId, request.auth.uid)).data.role;
+    }
+
+    function hasRole(storeId, roles) {
+      return isActiveMember(storeId) && memberRole(storeId) in roles;
     }
 
     function isStoreOwner(storeId) {
-      return isActiveMember(storeId)
-        && request.auth.uid == storeId
-        && get(/databases/$(database)/documents/stores/$(storeId)/members/$(request.auth.uid)).data.role == 'owner';
+      return hasRole(storeId, ['owner']) && request.auth.uid == storeId;
+    }
+
+    function validEmployeeMember(memberUid) {
+      return request.resource.data.keys().hasOnly([
+          'uid', 'role', 'displayName', 'email', 'active', 'createdAt'
+        ])
+        && request.resource.data.uid == memberUid
+        && request.resource.data.role in ['manager', 'cashier']
+        && request.resource.data.active is bool;
     }
 
     match /stores/{storeId} {
-      // The owner may read the exact store document addressed by their own UID.
-      // This permits the first provisioning transaction to read a missing doc.
+      // The owner may read the exact store document addressed by their UID
+      // during first provisioning; active members may read their store.
       allow get: if (signedIn() && request.auth.uid == storeId) || isActiveMember(storeId);
       allow list: if false;
 
@@ -34,29 +53,74 @@ service cloud.firestore {
 
       allow update: if isStoreOwner(storeId)
         && request.resource.data.ownerUid == resource.data.ownerUid
-        && request.resource.data.ownerUid == request.auth.uid;
+        && request.resource.data.ownerUid == request.auth.uid
+        && request.resource.data.schemaVersion == resource.data.schemaVersion;
 
       allow delete: if false;
 
       match /members/{memberUid} {
-        // The owner may read only their own membership doc during first setup.
+        // Members can read only their own membership; owners can list members.
         allow get: if signedIn() && memberUid == request.auth.uid;
         allow list: if isStoreOwner(storeId);
 
-        // Initial owner membership must be created atomically with its store.
+        // Initial owner membership is created atomically with the store.
         allow create: if signedIn()
           && request.auth.uid == storeId
           && memberUid == request.auth.uid
           && request.resource.data.uid == request.auth.uid
           && request.resource.data.role == 'owner'
           && request.resource.data.active == true
-          && getAfter(/databases/$(database)/documents/stores/$(storeId)).data.ownerUid == request.auth.uid;
+          && getAfter(/databases/$(database)/documents/stores/$(storeId)).data.ownerUid == request.auth.uid
+          || isStoreOwner(storeId)
+          && memberUid != request.auth.uid
+          && validEmployeeMember(memberUid);
 
-        allow update, delete: if false;
+        // Owner can update employee role/status, never the owner membership.
+        allow update: if isStoreOwner(storeId)
+          && memberUid != request.auth.uid
+          && validEmployeeMember(memberUid)
+          && request.resource.data.createdAt == resource.data.createdAt;
+
+        allow delete: if isStoreOwner(storeId) && memberUid != request.auth.uid;
       }
 
-      // Business data remains denied until collection- and role-specific rules
-      // are completed and tested.
+      match /products/{documentId} {
+        allow read: if isActiveMember(storeId);
+        allow create, update: if hasRole(storeId, ['owner', 'manager']);
+        allow delete: if hasRole(storeId, ['owner', 'manager']);
+      }
+
+      match /customers/{documentId} {
+        allow read: if isActiveMember(storeId);
+        allow create, update: if hasRole(storeId, ['owner', 'manager', 'cashier']);
+        allow delete: if hasRole(storeId, ['owner', 'manager']);
+      }
+
+      match /sales/{documentId} {
+        allow read: if isActiveMember(storeId);
+        allow create: if hasRole(storeId, ['owner', 'manager', 'cashier']);
+        allow update: if hasRole(storeId, ['owner', 'manager']);
+        allow delete: if hasRole(storeId, ['owner']);
+      }
+
+      match /expenses/{documentId} {
+        allow read, create, update: if hasRole(storeId, ['owner', 'manager']);
+        allow delete: if hasRole(storeId, ['owner']);
+      }
+
+      match /cashSessions/{documentId} {
+        allow read: if isActiveMember(storeId);
+        allow create, update: if hasRole(storeId, ['owner', 'manager', 'cashier']);
+        allow delete: if hasRole(storeId, ['owner']);
+      }
+
+      match /settings/{documentId} {
+        allow read: if isActiveMember(storeId);
+        allow create, update: if hasRole(storeId, ['owner']);
+        allow delete: if hasRole(storeId, ['owner']);
+      }
+
+      // Deny every not-yet-defined nested path by default.
       match /{document=**} {
         allow read, write: if false;
       }
