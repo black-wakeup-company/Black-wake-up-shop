@@ -92,14 +92,14 @@ ${
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-2 sm:p-4 bg-slate-900/70 backdrop-blur-sm overflow-y-auto">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-2 sm:p-4 bg-slate-950/70 backdrop-blur-md overflow-y-auto">
       <div
-        className={`relative w-full bg-white rounded-2xl shadow-2xl overflow-hidden border border-slate-200 my-4 sm:my-8 transition-all ${
+        className={`relative w-full bg-white rounded-3xl shadow-2xl overflow-hidden border border-white/70 my-4 sm:my-8 transition-all ${
           printFormat === 'facture' ? 'max-w-3xl' : 'max-w-md'
         }`}
       >
         {/* Header bar */}
-        <div className="flex flex-wrap items-center justify-between gap-2 px-4 sm:px-6 py-3.5 bg-slate-900 text-white">
+        <div className="flex flex-wrap items-center justify-between gap-2 px-4 sm:px-6 py-3.5 bg-gradient-to-r from-[#10251f] to-[#075b43] text-white">
           <div className="flex items-center gap-2">
             <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0" />
             <span className="text-xs sm:text-sm font-semibold tracking-wide">
