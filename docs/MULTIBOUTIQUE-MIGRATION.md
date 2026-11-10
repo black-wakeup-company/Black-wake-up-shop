@@ -15,6 +15,7 @@
 - `src/services/googleAuth.ts` : application Firebase secondaire dédiée à Google Drive.
 - `src/services/storeService.ts` : création transactionnelle ou vérification de l'espace propriétaire.
 - `src/services/storeDataService.ts` : accès Firestore explicitement limité à l'identifiant de boutique fourni.
+- `src/services/employeeAuth.ts` : création des comptes employés via une application Firebase secondaire, sans remplacer la session du propriétaire.
 - `src/components/auth/OwnerLoginScreen.tsx` : écran de connexion propriétaire prêt à être intégré après validation du parcours complet.
 - `firestore.rules` : règles séparées par collection et rôle.
 
@@ -23,6 +24,8 @@
 - `manager` : gestion des produits, clients, ventes, dépenses et sessions de caisse ; pas de gestion des membres ni des paramètres globaux.
 - `cashier` : lecture des produits et données clients, création des ventes et gestion des sessions de caisse ; pas d'accès aux dépenses.
 - Un membre inactif n'a aucun accès aux données métier.
+- Les accès métier exigent aussi un email vérifié (`email_verified`), y compris pour le propriétaire connecté via Google.
+- La création employé crée le compte Auth sur l'application secondaire, puis le document membre via la session propriétaire ; l'email de vérification est envoyé ensuite.
 - Les employés ne peuvent lire que leur propre document de membre ; seul le propriétaire peut lister et administrer les membres.
 
 ## Sécurité et activation
@@ -30,7 +33,7 @@ Les règles de rôle viennent d'être préparées dans le dépôt, mais elles ne
 Les contrôles du client ne remplacent jamais les règles Firestore côté serveur.
 
 ## Étapes suivantes
-1. Valider les règles avec des tests positifs et négatifs : propriétaire, manager, caissier, membre désactivé et utilisateur d'une autre boutique.
+1. Valider les règles avec des tests positifs et négatifs dans l'émulateur Firestore : propriétaire, manager, caissier, email non vérifié, membre désactivé et utilisateur d'une autre boutique.
 2. Ajouter la création des comptes employés email/mot de passe sans remplacer la session du propriétaire.
 3. Intégrer progressivement la connexion et le contexte boutique.
 4. Migrer les données locales uniquement après sauvegarde vérifiée et confirmation du propriétaire ; ne jamais importer les données de démonstration automatiquement.
