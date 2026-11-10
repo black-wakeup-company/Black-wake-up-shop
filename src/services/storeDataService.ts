@@ -57,9 +57,24 @@ const storeCollectionRef = (storeId: string, name: StoreCollection) => {
 };
 
 const assertDocumentIdentity = (data: Record<string, unknown>, expectedId: string, name: StoreCollection) => {
-  if (typeof data.id !== 'string' || data.id !== expectedId) {
-    throw new Error(`Document ${expectedId} incohérent dans ${name} : son identifiant interne ne correspond pas.`);
+  // New sales use syncId as their Firestore document key. Older sales keep
+  // their receipt number as the key, so both formats remain readable.
+  const storedId = name === 'sales' && typeof data.syncId === 'string'
+    ? data.syncId
+    : data.id;
+  if (typeof storedId !== 'string' || storedId !== expectedId) {
+    throw new Error(`Document ${expectedId} incohérent dans ${name} : son identifiant technique ne correspond pas.`);
   }
+};
+
+const getStorageId = <T extends StoreCollection>(name: T, item: StoreDocumentMap[T]): string => {
+  const storageId = name === 'sales' && typeof (item as Sale).syncId === 'string'
+    ? (item as Sale).syncId as string
+    : item.id;
+  if (!storageId || !storageId.trim() || storageId !== storageId.trim() || storageId.includes('/')) {
+    throw new Error('Identifiant technique du document invalide.');
+  }
+  return storageId;
 };
 
 const storeDocumentRef = (storeId: string, name: StoreCollection, id: string) => {
@@ -118,12 +133,13 @@ export const storeDataService = {
   ): Promise<void> {
     requireAuthenticatedUser(user);
     if (!item.id || !item.id.trim()) {
-      throw new Error('Un identifiant est obligatoire pour créer ce document.');
+      throw new Error('Un identifiant métier est obligatoire pour créer ce document.');
     }
     if (item.id !== item.id.trim()) {
-      throw new Error('L’identifiant du document ne doit pas contenir d’espaces au début ou à la fin.');
+      throw new Error('L’identifiant métier ne doit pas contenir d’espaces au début ou à la fin.');
     }
-    await setDoc(storeDocumentRef(storeId, name, item.id), item);
+    const storageId = getStorageId(name, item);
+    await setDoc(storeDocumentRef(storeId, name, storageId), item);
   },
 
   async update<T extends StoreCollection>(
