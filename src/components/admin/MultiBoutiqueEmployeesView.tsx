@@ -41,6 +41,8 @@ export const MultiBoutiqueEmployeesView: React.FC = () => {
         </div>
       </section>
 
+      <OwnerAuthPanel />
+
       <section className="rounded-2xl border border-amber-200 bg-amber-50 p-4 sm:p-5">
         <div className="flex items-start gap-3">
           <AlertTriangle className="mt-0.5 h-5 w-5 shrink-0 text-amber-700" />
