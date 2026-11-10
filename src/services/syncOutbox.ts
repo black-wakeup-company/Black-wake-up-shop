@@ -150,7 +150,7 @@ export const syncOutbox = {
     });
   },
 
-  async recordFailure(id: string, error: unknown): Promise<void> {
+  async recordFailure(storeId: string, id: string, error: unknown): Promise<void> {
     const database = await openDatabase();
     await new Promise<void>((resolve, reject) => {
       const transaction = database.transaction(STORE_NAME, 'readwrite');
@@ -158,7 +158,7 @@ export const syncOutbox = {
       const request = store.get(id);
       request.onsuccess = () => {
         const item = request.result as PendingSyncMutation | undefined;
-        if (item) {
+        if (item && item.storeId === storeId) {
           item.attempts += 1;
           item.lastError = error instanceof Error ? error.message : String(error);
           store.put(item);
@@ -170,11 +170,16 @@ export const syncOutbox = {
     });
   },
 
-  async acknowledge(id: string): Promise<void> {
+  async acknowledge(storeId: string, id: string): Promise<void> {
     const database = await openDatabase();
     await new Promise<void>((resolve, reject) => {
       const transaction = database.transaction(STORE_NAME, 'readwrite');
-      transaction.objectStore(STORE_NAME).delete(id);
+      const store = transaction.objectStore(STORE_NAME);
+      const request = store.get(id);
+      request.onsuccess = () => {
+        const item = request.result as PendingSyncMutation | undefined;
+        if (item && item.storeId === storeId) store.delete(id);
+      };
       transaction.oncomplete = () => resolve();
       transaction.onerror = () => reject(transaction.error ?? new Error('Impossible de confirmer la synchronisation.'));
       transaction.onabort = () => reject(transaction.error ?? new Error('Confirmation de synchronisation annulée.'));
