@@ -16,7 +16,10 @@
 - `src/services/storeService.ts` : création transactionnelle ou vérification de l'espace propriétaire.
 - `src/services/storeDataService.ts` : accès Firestore explicitement limité à l'identifiant de boutique fourni.
 - `src/services/employeeAuth.ts` : création des comptes employés via une application Firebase secondaire, sans remplacer la session du propriétaire.
-- `src/components/auth/OwnerLoginScreen.tsx` : écran de connexion propriétaire prêt à être intégré après validation du parcours complet.
+- `src/components/auth/OwnerLoginScreen.tsx` : écran de connexion propriétaire.
+- `src/components/auth/EmployeeLoginScreen.tsx` : écran de connexion employé par code boutique, email et mot de passe.
+- `src/context/BoutiqueContext.tsx` : prend désormais un `storeId` optionnel et isole les clés LocalStorage sous `boutiquepro:store:{storeId}:...`. Sans `storeId`, le mode historique de démonstration reste inchangé. Avec un `storeId`, une nouvelle boutique démarre avec des listes métier vides et des paramètres neutres ; aucune donnée de démonstration n'est copiée.
+- En mode boutique, les PIN de démonstration `1234` et `0000` ne sont plus acceptés comme solution de secours pour le verrouillage ou l'administration.
 - `firestore.rules` : règles séparées par collection et rôle.
 
 ## Modèle de rôles préparé
@@ -29,15 +32,16 @@
 - Les employés ne peuvent lire que leur propre document de membre ; seul le propriétaire peut lister et administrer les membres.
 
 ## Sécurité et activation
-Les règles de rôle viennent d'être préparées dans le dépôt, mais elles ne sont **pas encore publiées dans Firebase**. Elles ne sont pas encore validées par des tests d'émulateur Firestore. Ne les publiez pas et ne raccordez pas encore les services à l'interface avant cette validation.
+Les règles de rôle sont préparées dans le dépôt et validées par les tests automatisés de l'émulateur Firestore (8 tests). Elles ne sont **pas encore publiées dans Firebase** : la base distante est encore configurée avec un refus global. Ne lancez pas le parcours propriétaire/employé en production et ne publiez pas les règles avant une revue finale et un test coordonné de configuration Firebase.
 Les contrôles du client ne remplacent jamais les règles Firestore côté serveur.
 
 ## Étapes suivantes
 1. Valider les règles avec des tests positifs et négatifs dans l'émulateur Firestore : propriétaire, manager, caissier, email non vérifié, membre désactivé et utilisateur d'une autre boutique.
-2. Ajouter la création des comptes employés email/mot de passe sans remplacer la session du propriétaire.
-3. Intégrer progressivement la connexion et le contexte boutique.
-4. Migrer les données locales uniquement après sauvegarde vérifiée et confirmation du propriétaire ; ne jamais importer les données de démonstration automatiquement.
-5. Tester plusieurs comptes et appareils avant toute mise en production.
+2. Finaliser la séparation des sessions propriétaire, employé et Google Drive.
+3. Intégrer le routeur de connexion dans `App.tsx` après validation et publication contrôlée des règles Firestore.
+4. Connecter le contexte local au service Firestore avec stratégie hors-ligne et résolution des conflits.
+5. Migrer les données locales uniquement après sauvegarde vérifiée et confirmation du propriétaire ; ne jamais importer les données de démonstration automatiquement.
+6. Tester plusieurs comptes et appareils avant toute mise en production.
 
 ## Contraintes du projet
 - Rester sur Firebase Spark gratuit : ne pas activer Blaze ni la facturation.
