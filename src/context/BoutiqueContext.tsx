@@ -134,11 +134,46 @@ const STORAGE_KEYS = {
   CASH_SESSION: 'boutiquepro_cash_session_v2'
 };
 
-export const BoutiqueProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+const getScopedStorageKey = (key: keyof typeof STORAGE_KEYS, storeId?: string) =>
+  storeId ? `boutiquepro:store:${storeId}:${key.toLowerCase()}:v1` : STORAGE_KEYS[key];
+
+const createEmptySettings = (): BoutiqueSettings => ({
+  ...DEFAULT_SETTINGS,
+  boutiqueName: 'Ma boutique',
+  slogan: '',
+  address: '',
+  phone: '',
+  email: '',
+  nifOrSiret: '',
+  receiptFooterMessage: 'Merci pour votre confiance !',
+  cashierName: 'Propriétaire',
+  adminPin: ''
+});
+
+const createOwnerCashier = (storeId: string): Cashier => ({
+  id: `owner-${storeId}`,
+  name: 'Propriétaire',
+  pin: '',
+  role: 'admin',
+  active: true,
+  avatarColor: 'bg-emerald-600'
+});
+
+const createEmptyCashSession = (): CashSession => ({
+  id: `sess-${Date.now()}`,
+  openedAt: new Date().toISOString(),
+  openingAmount: 0,
+  cashierName: 'Propriétaire',
+  status: 'closed'
+});
+
+export const BoutiqueProvider: React.FC<{ children: React.ReactNode; storeId?: string }> = ({ children, storeId }) => {
+  const isTenant = Boolean(storeId);
+  const storageKey = (key: keyof typeof STORAGE_KEYS) => getScopedStorageKey(key, storeId);
   // Workspace Mode (caisse vs admin)
   const [workspaceMode, setWorkspaceModeState] = useState<WorkspaceMode>(() => {
     try {
-      const saved = localStorage.getItem(STORAGE_KEYS.WORKSPACE_MODE);
+      const saved = localStorage.getItem(storageKey('WORKSPACE_MODE'));
       return (saved as WorkspaceMode) || 'caisse';
     } catch {
       return 'caisse';
@@ -148,7 +183,7 @@ export const BoutiqueProvider: React.FC<{ children: React.ReactNode }> = ({ chil
   const [isAdminUnlocked, setIsAdminUnlocked] = useState(false);
   const [isScreenLocked, setIsScreenLocked] = useState<boolean>(() => {
     try {
-      return localStorage.getItem('boutiquepro_is_locked') === 'true';
+      return localStorage.getItem(storageKey('WORKSPACE_MODE') + ':locked') === 'true';
     } catch {
       return false;
     }
@@ -157,7 +192,7 @@ export const BoutiqueProvider: React.FC<{ children: React.ReactNode }> = ({ chil
   const lockScreen = () => {
     setIsScreenLocked(true);
     try {
-      localStorage.setItem('boutiquepro_is_locked', 'true');
+      localStorage.setItem(storageKey('WORKSPACE_MODE') + ':locked', 'true');
     } catch (e) {
       console.warn(e);
     }
@@ -187,8 +222,8 @@ export const BoutiqueProvider: React.FC<{ children: React.ReactNode }> = ({ chil
   // Cashiers
   const [cashiers, setCashiers] = useState<Cashier[]>(() => {
     try {
-      const saved = localStorage.getItem(STORAGE_KEYS.CASHIERS);
-      return saved ? JSON.parse(saved) : DEFAULT_CASHIERS;
+      const saved = localStorage.getItem(storageKey('CASHIERS'));
+      return saved ? JSON.parse(saved) : (isTenant && storeId ? [createOwnerCashier(storeId)] : DEFAULT_CASHIERS);
     } catch {
       return DEFAULT_CASHIERS;
     }
@@ -196,13 +231,13 @@ export const BoutiqueProvider: React.FC<{ children: React.ReactNode }> = ({ chil
 
   const [activeCashier, setActiveCashierState] = useState<Cashier>(() => {
     try {
-      const saved = localStorage.getItem(STORAGE_KEYS.ACTIVE_CASHIER);
+      const saved = localStorage.getItem(storageKey('ACTIVE_CASHIER'));
       if (saved) {
         const parsed = JSON.parse(saved);
         const match = DEFAULT_CASHIERS.find((c) => c.id === parsed.id);
         if (match) return match;
       }
-      return DEFAULT_CASHIERS[0];
+      return isTenant && storeId ? createOwnerCashier(storeId) : DEFAULT_CASHIERS[0];
     } catch {
       return DEFAULT_CASHIERS[0];
     }
@@ -211,8 +246,8 @@ export const BoutiqueProvider: React.FC<{ children: React.ReactNode }> = ({ chil
   // Products
   const [products, setProducts] = useState<Product[]>(() => {
     try {
-      const saved = localStorage.getItem(STORAGE_KEYS.PRODUCTS);
-      return saved ? JSON.parse(saved) : DEFAULT_PRODUCTS;
+      const saved = localStorage.getItem(storageKey('PRODUCTS'));
+      return saved ? JSON.parse(saved) : (isTenant ? [] : DEFAULT_PRODUCTS);
     } catch {
       return DEFAULT_PRODUCTS;
     }
@@ -221,8 +256,8 @@ export const BoutiqueProvider: React.FC<{ children: React.ReactNode }> = ({ chil
   // Customers
   const [customers, setCustomers] = useState<Customer[]>(() => {
     try {
-      const saved = localStorage.getItem(STORAGE_KEYS.CUSTOMERS);
-      return saved ? JSON.parse(saved) : DEFAULT_CUSTOMERS;
+      const saved = localStorage.getItem(storageKey('CUSTOMERS'));
+      return saved ? JSON.parse(saved) : (isTenant ? [] : DEFAULT_CUSTOMERS);
     } catch {
       return DEFAULT_CUSTOMERS;
     }
@@ -231,8 +266,8 @@ export const BoutiqueProvider: React.FC<{ children: React.ReactNode }> = ({ chil
   // Sales
   const [sales, setSales] = useState<Sale[]>(() => {
     try {
-      const saved = localStorage.getItem(STORAGE_KEYS.SALES);
-      return saved ? JSON.parse(saved) : DEFAULT_SALES;
+      const saved = localStorage.getItem(storageKey('SALES'));
+      return saved ? JSON.parse(saved) : (isTenant ? [] : DEFAULT_SALES);
     } catch {
       return DEFAULT_SALES;
     }
@@ -241,8 +276,8 @@ export const BoutiqueProvider: React.FC<{ children: React.ReactNode }> = ({ chil
   // Expenses
   const [expenses, setExpenses] = useState<Expense[]>(() => {
     try {
-      const saved = localStorage.getItem(STORAGE_KEYS.EXPENSES);
-      return saved ? JSON.parse(saved) : DEFAULT_EXPENSES;
+      const saved = localStorage.getItem(storageKey('EXPENSES'));
+      return saved ? JSON.parse(saved) : (isTenant ? [] : DEFAULT_EXPENSES);
     } catch {
       return DEFAULT_EXPENSES;
     }
@@ -251,8 +286,8 @@ export const BoutiqueProvider: React.FC<{ children: React.ReactNode }> = ({ chil
   // Settings
   const [settings, setSettings] = useState<BoutiqueSettings>(() => {
     try {
-      const saved = localStorage.getItem(STORAGE_KEYS.SETTINGS);
-      return saved ? { ...DEFAULT_SETTINGS, ...JSON.parse(saved) } : DEFAULT_SETTINGS;
+      const saved = localStorage.getItem(storageKey('SETTINGS'));
+      return saved ? { ...(isTenant ? createEmptySettings() : DEFAULT_SETTINGS), ...JSON.parse(saved) } : (isTenant ? createEmptySettings() : DEFAULT_SETTINGS);
     } catch {
       return DEFAULT_SETTINGS;
     }
@@ -261,21 +296,15 @@ export const BoutiqueProvider: React.FC<{ children: React.ReactNode }> = ({ chil
   // Cash Session
   const [cashSession, setCashSession] = useState<CashSession>(() => {
     try {
-      const saved = localStorage.getItem(STORAGE_KEYS.CASH_SESSION);
-      return saved ? JSON.parse(saved) : {
-        id: 'sess-today',
-        openedAt: new Date().toISOString(),
-        openingAmount: 150.0,
-        cashierName: DEFAULT_SETTINGS.cashierName,
-        status: 'open'
-      };
+      const saved = localStorage.getItem(storageKey('CASH_SESSION'));
+      return saved ? JSON.parse(saved) : (isTenant ? createEmptyCashSession() : {
+        id: 'sess-today', openedAt: new Date().toISOString(), openingAmount: 150.0,
+        cashierName: DEFAULT_SETTINGS.cashierName, status: 'open'
+      });
     } catch {
-      return {
-        id: 'sess-today',
-        openedAt: new Date().toISOString(),
-        openingAmount: 150.0,
-        cashierName: DEFAULT_SETTINGS.cashierName,
-        status: 'open'
+      return isTenant ? createEmptyCashSession() : {
+        id: 'sess-today', openedAt: new Date().toISOString(), openingAmount: 150.0,
+        cashierName: DEFAULT_SETTINGS.cashierName, status: 'open'
       };
     }
   });
@@ -304,7 +333,7 @@ export const BoutiqueProvider: React.FC<{ children: React.ReactNode }> = ({ chil
   // Sync state to local storage
   useEffect(() => {
     try {
-      localStorage.setItem(STORAGE_KEYS.WORKSPACE_MODE, workspaceMode);
+      localStorage.setItem(storageKey('WORKSPACE_MODE'), workspaceMode);
     } catch (e) {
       console.warn('Storage error', e);
     }
@@ -312,7 +341,7 @@ export const BoutiqueProvider: React.FC<{ children: React.ReactNode }> = ({ chil
 
   useEffect(() => {
     try {
-      localStorage.setItem(STORAGE_KEYS.CASHIERS, JSON.stringify(cashiers));
+      localStorage.setItem(storageKey('CASHIERS'), JSON.stringify(cashiers));
     } catch (e) {
       console.warn('Storage error', e);
     }
@@ -320,7 +349,7 @@ export const BoutiqueProvider: React.FC<{ children: React.ReactNode }> = ({ chil
 
   useEffect(() => {
     try {
-      localStorage.setItem(STORAGE_KEYS.ACTIVE_CASHIER, JSON.stringify(activeCashier));
+      localStorage.setItem(storageKey('ACTIVE_CASHIER'), JSON.stringify(activeCashier));
     } catch (e) {
       console.warn('Storage error', e);
     }
@@ -328,7 +357,7 @@ export const BoutiqueProvider: React.FC<{ children: React.ReactNode }> = ({ chil
 
   useEffect(() => {
     try {
-      localStorage.setItem(STORAGE_KEYS.PRODUCTS, JSON.stringify(products));
+      localStorage.setItem(storageKey('PRODUCTS'), JSON.stringify(products));
     } catch (e) {
       console.warn('LocalStorage error saving products', e);
     }
@@ -336,7 +365,7 @@ export const BoutiqueProvider: React.FC<{ children: React.ReactNode }> = ({ chil
 
   useEffect(() => {
     try {
-      localStorage.setItem(STORAGE_KEYS.CUSTOMERS, JSON.stringify(customers));
+      localStorage.setItem(storageKey('CUSTOMERS'), JSON.stringify(customers));
     } catch (e) {
       console.warn('LocalStorage error saving customers', e);
     }
@@ -344,7 +373,7 @@ export const BoutiqueProvider: React.FC<{ children: React.ReactNode }> = ({ chil
 
   useEffect(() => {
     try {
-      localStorage.setItem(STORAGE_KEYS.SALES, JSON.stringify(sales));
+      localStorage.setItem(storageKey('SALES'), JSON.stringify(sales));
     } catch (e) {
       console.warn('LocalStorage error saving sales', e);
     }
@@ -352,7 +381,7 @@ export const BoutiqueProvider: React.FC<{ children: React.ReactNode }> = ({ chil
 
   useEffect(() => {
     try {
-      localStorage.setItem(STORAGE_KEYS.EXPENSES, JSON.stringify(expenses));
+      localStorage.setItem(storageKey('EXPENSES'), JSON.stringify(expenses));
     } catch (e) {
       console.warn('LocalStorage error saving expenses', e);
     }
@@ -360,7 +389,7 @@ export const BoutiqueProvider: React.FC<{ children: React.ReactNode }> = ({ chil
 
   useEffect(() => {
     try {
-      localStorage.setItem(STORAGE_KEYS.SETTINGS, JSON.stringify(settings));
+      localStorage.setItem(storageKey('SETTINGS'), JSON.stringify(settings));
     } catch (e) {
       console.warn('LocalStorage error saving settings', e);
     }
@@ -368,7 +397,7 @@ export const BoutiqueProvider: React.FC<{ children: React.ReactNode }> = ({ chil
 
   useEffect(() => {
     try {
-      localStorage.setItem(STORAGE_KEYS.CASH_SESSION, JSON.stringify(cashSession));
+      localStorage.setItem(storageKey('CASH_SESSION'), JSON.stringify(cashSession));
     } catch (e) {
       console.warn('LocalStorage error saving cash session', e);
     }
@@ -934,19 +963,16 @@ export const BoutiqueProvider: React.FC<{ children: React.ReactNode }> = ({ chil
   };
 
   const resetAllData = () => {
-    setProducts(DEFAULT_PRODUCTS);
-    setCustomers(DEFAULT_CUSTOMERS);
-    setSales(DEFAULT_SALES);
-    setExpenses(DEFAULT_EXPENSES);
-    setCashiers(DEFAULT_CASHIERS);
-    setActiveCashierState(DEFAULT_CASHIERS[0]);
-    setSettings(DEFAULT_SETTINGS);
-    setCashSession({
-      id: 'sess-reset',
-      openedAt: new Date().toISOString(),
-      openingAmount: 150.0,
-      cashierName: DEFAULT_SETTINGS.cashierName,
-      status: 'open'
+    setProducts(isTenant ? [] : DEFAULT_PRODUCTS);
+    setCustomers(isTenant ? [] : DEFAULT_CUSTOMERS);
+    setSales(isTenant ? [] : DEFAULT_SALES);
+    setExpenses(isTenant ? [] : DEFAULT_EXPENSES);
+    setCashiers(isTenant && storeId ? [createOwnerCashier(storeId)] : DEFAULT_CASHIERS);
+    setActiveCashierState(isTenant && storeId ? createOwnerCashier(storeId) : DEFAULT_CASHIERS[0]);
+    setSettings(isTenant ? createEmptySettings() : DEFAULT_SETTINGS);
+    setCashSession(isTenant ? createEmptyCashSession() : {
+      id: 'sess-reset', openedAt: new Date().toISOString(), openingAmount: 150.0,
+      cashierName: DEFAULT_SETTINGS.cashierName, status: 'open'
     });
     clearCart();
     showToast('Données réinitialisées au modèle par défaut', 'info');
