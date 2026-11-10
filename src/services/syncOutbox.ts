@@ -124,7 +124,7 @@ export const syncOutbox = {
     const database = await openDatabase();
     return new Promise((resolve, reject) => {
       const transaction = database.transaction(STORE_NAME, 'readonly');
-      const range = IDBKeyRange.bound([storeId, ''], [storeId, '\\uffff']);
+      const range = IDBKeyRange.bound([storeId, ''], [storeId, '\uffff']);
       const request = transaction.objectStore(STORE_NAME).index('by-store-created').getAll(range);
       request.onsuccess = () => {
         const items = (request.result as PendingSyncMutation[])
