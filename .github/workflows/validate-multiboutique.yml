@@ -38,6 +38,9 @@ jobs:
       - name: Local sync outbox tests
         run: npm run test:outbox
 
+      - name: Sync coordinator tests
+        run: npm run test:coordinator
+
       - name: Firestore rules emulator tests
         run: npm run test:rules
 
