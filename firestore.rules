@@ -12,6 +12,7 @@ service cloud.firestore {
 
     function isActiveMember(storeId) {
       return signedIn()
+        && request.auth.token.email_verified == true
         && exists(memberPath(storeId, request.auth.uid))
         && get(memberPath(storeId, request.auth.uid)).data.active == true;
     }
@@ -34,6 +35,10 @@ service cloud.firestore {
         ])
         && request.resource.data.uid == memberUid
         && request.resource.data.role in ['manager', 'cashier']
+        && request.resource.data.displayName is string
+        && request.resource.data.displayName.size() > 0
+        && request.resource.data.email is string
+        && request.resource.data.email.size() > 3
         && request.resource.data.active is bool;
     }
 
@@ -64,16 +69,19 @@ service cloud.firestore {
         allow list: if isStoreOwner(storeId);
 
         // Initial owner membership is created atomically with the store.
-        allow create: if signedIn()
-          && request.auth.uid == storeId
-          && memberUid == request.auth.uid
-          && request.resource.data.uid == request.auth.uid
-          && request.resource.data.role == 'owner'
-          && request.resource.data.active == true
-          && getAfter(/databases/$(database)/documents/stores/$(storeId)).data.ownerUid == request.auth.uid
-          || isStoreOwner(storeId)
-          && memberUid != request.auth.uid
-          && validEmployeeMember(memberUid);
+        allow create: if (
+            signedIn()
+            && request.auth.uid == storeId
+            && memberUid == request.auth.uid
+            && request.resource.data.uid == request.auth.uid
+            && request.resource.data.role == 'owner'
+            && request.resource.data.active == true
+            && getAfter(/databases/$(database)/documents/stores/$(storeId)).data.ownerUid == request.auth.uid
+          ) || (
+            isStoreOwner(storeId)
+            && memberUid != request.auth.uid
+            && validEmployeeMember(memberUid)
+          );
 
         // Owner can update employee role/status, never the owner membership.
         allow update: if isStoreOwner(storeId)
