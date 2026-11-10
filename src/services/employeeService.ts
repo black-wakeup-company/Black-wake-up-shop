@@ -11,7 +11,7 @@ import {
   updateDoc,
   type DocumentData
 } from 'firebase/firestore';
-import { reload } from 'firebase/auth';
+import { getIdToken, reload } from 'firebase/auth';
 import { auth } from './firebase';
 
 const db = getFirestore(auth.app);
@@ -32,10 +32,11 @@ const requireVerifiedSession = async () => {
   const user = auth.currentUser;
   if (!user) throw new Error('Connectez-vous pour continuer.');
   await reload(user);
-  if (!auth.currentUser?.emailVerified) {
-    throw new Error('Votre adresse e-mail doit être vérifiée.');
+  await getIdToken(user, true);
+  if (auth.currentUser?.uid !== user.uid || !user.emailVerified) {
+    throw new Error('Votre adresse e-mail doit être vérifiée et votre session doit rester active.');
   }
-  return auth.currentUser;
+  return user;
 };
 
 const requireOwner = async (storeId: string) => {
