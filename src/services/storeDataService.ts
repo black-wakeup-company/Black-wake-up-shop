@@ -16,7 +16,8 @@ import type {
   Sale,
   Expense,
   CashSession,
-  BoutiqueSettings
+  BoutiqueSettings,
+  StockMovement
 } from '../types/boutique';
 
 const db = getFirestore(auth.app);
@@ -164,6 +165,47 @@ export const storeDataService = {
   ): Promise<void> {
     requireAuthenticatedUser(user);
     await deleteDoc(storeDocumentRef(storeId, name, id));
+  },
+
+  /**
+   * Stock movements are append-only audit events. There is deliberately no
+   * update/delete method: corrections must be represented by a new movement.
+   */
+  async listStockMovements(storeId: string, user?: User): Promise<StockMovement[]> {
+    const currentUser = requireAuthenticatedUser(user);
+    const snapshot = await getDocs(collection(db, 'stores', requireStoreId(storeId), 'stockMovements'));
+    return snapshot.docs.map((item) => {
+      const data = item.data();
+      if (data.id !== item.id || data.createdBy !== currentUser.uid) {
+        // Do not silently accept forged or malformed identity metadata.
+        if (data.id !== item.id || typeof data.createdBy !== 'string' || !data.createdBy) {
+          throw new Error(`Mouvement de stock incohérent : ${item.id}.`);
+        }
+      }
+      return data as StockMovement;
+    });
+  },
+
+  async createStockMovement(
+    storeId: string,
+    movement: StockMovement,
+    user?: User
+  ): Promise<void> {
+    const currentUser = requireAuthenticatedUser(user);
+    const id = movement.id.trim();
+    if (!id || id !== movement.id || id.includes('/')) {
+      throw new Error('Identifiant de mouvement invalide.');
+    }
+    if (!movement.productId.trim() || !Number.isFinite(movement.quantityDelta) || movement.quantityDelta === 0) {
+      throw new Error('Les données du mouvement de stock sont invalides.');
+    }
+    if (movement.createdBy !== currentUser.uid) {
+      throw new Error('Le créateur du mouvement doit correspondre au compte authentifié.');
+    }
+    if (!['sale', 'refund', 'restock', 'adjustment'].includes(movement.reason)) {
+      throw new Error('Motif de mouvement de stock invalide.');
+    }
+    await setDoc(doc(db, 'stores', requireStoreId(storeId), 'stockMovements', id), movement);
   },
 
   async getSettings(storeId: string, user?: User): Promise<BoutiqueSettings | null> {
