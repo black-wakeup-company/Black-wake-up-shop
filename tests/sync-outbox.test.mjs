@@ -63,7 +63,7 @@ test('rejects forbidden operations, malformed payloads and mismatched document t
     /document ciblé/
   );
   await assert.rejects(
-    syncOutbox.enqueue(mutation({ entity: 'settings', documentId: 'other' })),
+    syncOutbox.enqueue(mutation({ entity: 'settings', documentId: 'other', payload: { boutiqueName: 'Test' } })),
     /document principal/
   );
 });
