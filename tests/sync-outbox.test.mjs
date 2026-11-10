@@ -46,11 +46,11 @@ test('rejects reusing an idempotency key for a different intent', async () => {
 test('records failures and removes a job only after acknowledgement', async () => {
   const item = mutation();
   await syncOutbox.enqueue(item);
-  await syncOutbox.recordFailure(item.id, new Error('Réseau indisponible'));
+  await syncOutbox.recordFailure(item.storeId, item.id, new Error('Réseau indisponible'));
   const [failed] = await syncOutbox.listPending(item.storeId);
   assert.equal(failed.attempts, 1);
   assert.equal(failed.lastError, 'Réseau indisponible');
-  await syncOutbox.acknowledge(item.id);
+  await syncOutbox.acknowledge(item.storeId, item.id);
   assert.equal((await syncOutbox.listPending(item.storeId)).some(x => x.id === item.id), false);
 });
 
@@ -76,4 +76,16 @@ test('uses the technical sync id for sales while preserving the receipt number',
   });
   await syncOutbox.enqueue(item);
   assert.deepEqual(await syncOutbox.listPending(item.storeId), [item]);
+});
+
+
+test('a different boutique cannot mutate or acknowledge another boutique job', async () => {
+  const item = mutation();
+  await syncOutbox.enqueue(item);
+  await syncOutbox.recordFailure('another-boutique', item.id, new Error('forbidden'));
+  let [pending] = await syncOutbox.listPending(item.storeId);
+  assert.equal(pending.attempts, 0);
+  await syncOutbox.acknowledge('another-boutique', item.id);
+  [pending] = await syncOutbox.listPending(item.storeId);
+  assert.equal(pending.id, item.id);
 });
