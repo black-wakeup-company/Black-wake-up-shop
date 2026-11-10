@@ -224,7 +224,7 @@ export const PosView: React.FC = () => {
   };
 
   return (
-    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+    <div className="bp-view max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
       {/* 2-Column Split: Product Catalog (Left) + Cart & Checkout (Right) */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
         {/* LEFT COLUMN: Catalog & Fast Search */}
