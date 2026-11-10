@@ -11,6 +11,7 @@
 ## Fondation ajoutée
 - `src/services/storeService.ts` : création transactionnelle ou vérification de l'espace propriétaire.
 - `src/services/ownerAuth.ts` : connexion Google Firebase du propriétaire sans demander l'accès Google Drive.
+- `src/components/auth/OwnerLoginScreen.tsx` : écran de connexion propriétaire au design premium, prêt à être intégré après validation du parcours sécurisé.
 - `firestore.rules` : règles initiales restrictives.
 - Ces fichiers ne sont pas encore raccordés à l'interface.
 
