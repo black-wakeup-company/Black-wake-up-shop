@@ -717,9 +717,14 @@ export const BoutiqueProvider: React.FC<{ children: React.ReactNode; storeId?: s
     const nextSeq = sales.length + 42;
     const padded = String(nextSeq).padStart(4, '0');
     const saleId = `VTE-${new Date().getFullYear()}-${padded}`;
+    // Keep the receipt number unchanged; this separate ID is for future sync deduplication.
+    const syncId = typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function'
+      ? crypto.randomUUID()
+      : `sale-${Date.now()}-${Math.random().toString(36).slice(2)}-${Math.random().toString(36).slice(2)}`;
 
     const newSale: Sale = {
       id: saleId,
+      syncId,
       date: new Date().toISOString(),
       cashierName: activeCashier?.name || settings.cashierName,
       customerId: selectedCustomer?.id,
