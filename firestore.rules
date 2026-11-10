@@ -66,6 +66,7 @@ service cloud.firestore {
       allow create: if signedIn()
         && request.auth.token.email_verified == true
         && request.auth.uid == storeId
+        && !exists(/databases/$(database)/documents/stores/$(storeId)/members/$(request.auth.uid))
         && request.resource.data.ownerUid == request.auth.uid
         && request.resource.data.keys().hasOnly([
           'ownerUid', 'name', 'ownerEmail', 'createdAt', 'schemaVersion'
