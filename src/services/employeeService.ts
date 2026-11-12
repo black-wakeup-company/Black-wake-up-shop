@@ -87,6 +87,59 @@ export const acceptEmployeeInvitation = async (storeId: string, invitationId: st
     transaction.update(invitationRef, { status: 'accepted', acceptedBy: user.uid, acceptedAt: serverTimestamp() });
   });
 };
+
+export type EmployeeInvitationStatus = 'pending' | 'accepted' | 'revoked';
+
+export interface EmployeeInvitation {
+  id: string;
+  email: string;
+  displayName: string;
+  role: EmployeeRole;
+  status: EmployeeInvitationStatus;
+  createdAt?: unknown;
+  expiresAt?: unknown;
+}
+
+/** Lists invitations for the authenticated owner only. */
+export const listEmployeeInvitations = async (storeId: string): Promise<EmployeeInvitation[]> => {
+  await requireOwner(storeId);
+  const invitationsQuery = query(
+    collection(db, 'stores', storeId, 'invitations'),
+    orderBy('createdAt', 'desc')
+  );
+  const snapshot = await getDocs(invitationsQuery);
+  return snapshot.docs.map((item) => {
+    const data = item.data() as DocumentData;
+    return {
+      id: item.id,
+      email: String(data.email ?? ''),
+      displayName: String(data.displayName ?? ''),
+      role: data.role as EmployeeRole,
+      status: data.status as EmployeeInvitationStatus,
+      createdAt: data.createdAt,
+      expiresAt: data.expiresAt
+    };
+  });
+};
+
+/** Revokes a pending invitation; accepted or already revoked invitations are immutable. */
+export const revokeEmployeeInvitation = async (
+  storeId: string,
+  invitationId: string
+): Promise<void> => {
+  await requireOwner(storeId);
+  if (!invitationId.trim()) throw new Error('Invitation invalide.');
+  const invitationRef = doc(db, 'stores', storeId, 'invitations', invitationId);
+  await runTransaction(db, async (transaction) => {
+    const snapshot = await transaction.get(invitationRef);
+    if (!snapshot.exists()) throw new Error('Invitation introuvable.');
+    if (snapshot.data().status !== 'pending') {
+      throw new Error('Seule une invitation en attente peut être révoquée.');
+    }
+    transaction.update(invitationRef, { status: 'revoked' });
+  });
+};
+
 export const listEmployees = async (storeId: string): Promise<EmployeeMembership[]> => {
   await requireOwner(storeId);
   const membersQuery = query(
