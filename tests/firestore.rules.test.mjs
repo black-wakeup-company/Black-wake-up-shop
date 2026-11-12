@@ -557,3 +557,69 @@ test('an accepted invitation cannot be revoked by the owner', async () => {
   });
   await assertFails(updateDoc(invitationRef, { status: 'revoked' }));
 });
+
+
+test('invitation acceptance rejects a mismatched email and owner-forged activation', async () => {
+  const ownerDb = dbFor(ownerUid);
+  const invitationId = 'invite-wrong-email';
+  const invitationRef = doc(ownerDb, 'stores', storeId, 'invitations', invitationId);
+  await assertSucceeds(setDoc(invitationRef, {
+    email: 'intended@example.test',
+    displayName: 'Intended Employee',
+    role: 'cashier',
+    status: 'pending',
+    createdBy: ownerUid,
+    createdAt: serverTimestamp(),
+    expiresAt: Timestamp.fromMillis(Date.now() + 24 * 60 * 60 * 1000)
+  }));
+
+  const wrongAccountUid = 'wrong-account';
+  const wrongEmailDb = env.authenticatedContext(wrongAccountUid, {
+    email_verified: true,
+    email: 'attacker@example.test'
+  }).firestore();
+  const wrongMemberRef = doc(wrongEmailDb, 'stores', storeId, 'members', wrongAccountUid);
+
+  await assertFails(runTransaction(wrongEmailDb, async (transaction) => {
+    const currentInvitation = await transaction.get(
+      doc(wrongEmailDb, 'stores', storeId, 'invitations', invitationId)
+    );
+    const currentMember = await transaction.get(wrongMemberRef);
+    assert.equal(currentInvitation.data().status, 'pending');
+    assert.equal(currentMember.exists(), false);
+    transaction.set(wrongMemberRef, {
+      uid: wrongAccountUid,
+      role: 'cashier',
+      displayName: 'Attacker',
+      email: 'intended@example.test',
+      active: true,
+      status: 'active',
+      createdAt: serverTimestamp(),
+      invitationId
+    });
+    transaction.update(doc(wrongEmailDb, 'stores', storeId, 'invitations', invitationId), {
+      status: 'accepted',
+      acceptedBy: wrongAccountUid,
+      acceptedAt: serverTimestamp()
+    });
+  }));
+
+  await assertFails(updateDoc(invitationRef, {
+    status: 'accepted',
+    acceptedBy: ownerUid,
+    acceptedAt: serverTimestamp()
+  }));
+  await assertFails(setDoc(doc(ownerDb, 'stores', storeId, 'members', 'owner-forged-employee'), {
+    uid: 'owner-forged-employee',
+    role: 'cashier',
+    displayName: 'Forged Employee',
+    email: 'forged@example.test',
+    active: true,
+    status: 'active',
+    createdAt: serverTimestamp(),
+    invitationId
+  }));
+
+  const unchanged = await getDoc(invitationRef);
+  assert.equal(unchanged.data().status, 'pending');
+});
