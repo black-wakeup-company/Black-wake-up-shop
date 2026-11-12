@@ -175,12 +175,15 @@ service cloud.firestore {
             && request.resource.data.uid == resource.data.uid
             && request.resource.data.email == resource.data.email
             && request.resource.data.createdAt == resource.data.createdAt
-            && (request.resource.data.active == false
-              || request.resource.data.active == resource.data.active)
             && (
-              !resource.data.keys().hasAny(['status'])
-              || request.resource.data.status == resource.data.status
-              || request.resource.data.status == 'suspended'
+              (request.resource.data.active == false
+                && (request.resource.data.status == resource.data.status
+                  || request.resource.data.status == 'suspended'))
+              || (resource.data.status == 'suspended'
+                && resource.data.active == false
+                && request.resource.data.active == true
+                && request.resource.data.status == 'active'
+                && request.resource.data.role == resource.data.role)
             )
           ) || (
             signedIn()
