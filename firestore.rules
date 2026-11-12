@@ -175,13 +175,22 @@ service cloud.firestore {
             && request.resource.data.uid == resource.data.uid
             && request.resource.data.email == resource.data.email
             && request.resource.data.createdAt == resource.data.createdAt
+            && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['role', 'active', 'status'])
+            && request.resource.data.role in ['manager', 'cashier']
             && (
               (request.resource.data.active == false
-                && (request.resource.data.status == resource.data.status
+                && (!request.resource.data.keys().hasAny(['status'])
                   || request.resource.data.status == 'suspended'))
-              || (resource.data.status == 'suspended'
+              || (resource.data.active == true
+                && request.resource.data.active == true
+                && (!resource.data.keys().hasAny(['status'])
+                  || (request.resource.data.keys().hasAny(['status'])
+                    && request.resource.data.status == resource.data.status)))
+              || (resource.data.keys().hasAny(['status'])
+                && resource.data.status == 'suspended'
                 && resource.data.active == false
                 && request.resource.data.active == true
+                && request.resource.data.keys().hasAny(['status'])
                 && request.resource.data.status == 'active'
                 && request.resource.data.role == resource.data.role)
             )
