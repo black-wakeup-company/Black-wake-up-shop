@@ -8,6 +8,7 @@ import { SettingsModal } from './components/settings/SettingsModal';
 import { GoogleDriveBackupModal } from './components/common/GoogleDriveBackupModal';
 import { ToastContainer } from './components/common/ToastContainer';
 import { LockScreen } from './components/auth/LockScreen';
+import { EmployeeInvitationLanding } from './components/auth/EmployeeInvitationLanding';
 
 function BoutiqueApp() {
   const { workspaceMode, setWorkspaceMode, settings } = useBoutique();
@@ -83,6 +84,17 @@ function BoutiqueApp() {
 }
 
 export default function App() {
+  const params = new URLSearchParams(window.location.search);
+  const inviteStore = params.get('inviteStore');
+  const inviteId = params.get('inviteId');
+
+  if (inviteStore || inviteId) {
+    if (!inviteStore || !inviteId) {
+      return <div className="min-h-screen bg-slate-50 p-8 text-center text-sm text-rose-700">Lien d’invitation incomplet ou invalide.</div>;
+    }
+    return <EmployeeInvitationLanding storeId={inviteStore} invitationId={inviteId} />;
+  }
+
   return (
     <BoutiqueProvider>
       <BoutiqueApp />
