@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { onAuthStateChanged } from 'firebase/auth';
 import { auth } from '../../services/firebase';
-import { createEmployeeInvitation, listEmployeeInvitations, revokeEmployeeInvitation, listEmployees, changeEmployeeRole, suspendEmployee, type EmployeeInvitation, type EmployeeMembership } from '../../services/employeeService';
+import { createEmployeeInvitation, listEmployeeInvitations, revokeEmployeeInvitation, listEmployees, changeEmployeeRole, suspendEmployee, reactivateEmployee, type EmployeeInvitation, type EmployeeMembership } from '../../services/employeeService';
 import { OwnerAuthPanel } from './OwnerAuthPanel';
 import {
   Cloud,
@@ -80,6 +80,17 @@ export const MultiBoutiqueEmployeesView: React.FC = () => {
       setFeedback('Accès de l’employé suspendu.');
       await refreshEmployees();
     } catch (cause) { setError(cause instanceof Error ? cause.message : 'Impossible de suspendre cet employé.'); }
+    finally { setBusy(false); }
+  };
+
+  const reactivateEmployeeAccess = async (employeeUid: string) => {
+    if (!REMOTE_INVITATIONS_ENABLED || !ownerUid) return;
+    setBusy(true); setError(''); setFeedback('');
+    try {
+      await reactivateEmployee(ownerUid, employeeUid);
+      setFeedback('Accès de l’employé réactivé.');
+      await refreshEmployees();
+    } catch (cause) { setError(cause instanceof Error ? cause.message : 'Impossible de réactiver cet employé.'); }
     finally { setBusy(false); }
   };
 
@@ -244,8 +255,13 @@ export const MultiBoutiqueEmployeesView: React.FC = () => {
                     <option value="cashier">Caissier</option>
                     <option value="manager">Gérant</option>
                   </select>
-                  {employee.active && <button type="button" disabled={busy} onClick={() => void suspendEmployeeAccess(employee.uid)}
-                    className="rounded-lg border border-rose-200 px-2.5 py-2 text-[10px] font-bold text-rose-700 disabled:opacity-40">Suspendre</button>}
+                  {employee.active ? (
+                    <button type="button" disabled={busy} onClick={() => void suspendEmployeeAccess(employee.uid)}
+                      className="rounded-lg border border-rose-200 px-2.5 py-2 text-[10px] font-bold text-rose-700 disabled:opacity-40">Suspendre</button>
+                  ) : employee.status === 'suspended' ? (
+                    <button type="button" disabled={busy} onClick={() => void reactivateEmployeeAccess(employee.uid)}
+                      className="rounded-lg border border-emerald-200 px-2.5 py-2 text-[10px] font-bold text-emerald-700 disabled:opacity-40">Réactiver</button>
+                  ) : null}
                 </div>
               </article>
             ))}
