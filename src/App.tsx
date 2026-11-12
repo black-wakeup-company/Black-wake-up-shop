@@ -8,6 +8,7 @@ import { SettingsModal } from './components/settings/SettingsModal';
 import { GoogleDriveBackupModal } from './components/common/GoogleDriveBackupModal';
 import { ToastContainer } from './components/common/ToastContainer';
 import { LockScreen } from './components/auth/LockScreen';
+import { EmployeeInvitationView } from './components/auth/EmployeeInvitationView';
 import { EmployeeInvitationLanding } from './components/auth/EmployeeInvitationLanding';
 
 function BoutiqueApp() {
