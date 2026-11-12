@@ -9,7 +9,7 @@ import { GoogleDriveBackupModal } from './components/common/GoogleDriveBackupMod
 import { ToastContainer } from './components/common/ToastContainer';
 import { LockScreen } from './components/auth/LockScreen';
 import { EmployeeInvitationView } from './components/auth/EmployeeInvitationView';
-import { EmployeeInvitationLanding } from './components/auth/EmployeeInvitationLanding';
+import { EmployeeInvitationView } from './components/auth/EmployeeInvitationView';
 
 function BoutiqueApp() {
   const { workspaceMode, setWorkspaceMode, settings } = useBoutique();
@@ -93,7 +93,7 @@ export default function App() {
     if (!inviteStore || !inviteId) {
       return <div className="min-h-screen bg-slate-50 p-8 text-center text-sm text-rose-700">Lien d’invitation incomplet ou invalide.</div>;
     }
-    return <EmployeeInvitationLanding storeId={inviteStore} invitationId={inviteId} />;
+    return <EmployeeInvitationView storeId={inviteStore} invitationId={inviteId} />;
   }
 
   return (
