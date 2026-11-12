@@ -499,9 +499,11 @@ test('expired or revoked invitations cannot be read or accepted', async () => {
     email: 'employee-expired@example.test', displayName: 'Employee',
     role: 'cashier', createdBy: ownerUid, createdAt: serverTimestamp()
   };
-  await assertSucceeds(setDoc(expiredRef, {
-    ...base, status: 'pending', expiresAt: Timestamp.fromMillis(Date.now() - 1000)
-  }));
+  await env.withSecurityRulesDisabled(async (context) => {
+    await setDoc(doc(context.firestore(), 'stores', storeId, 'invitations', 'invite-expired'), {
+      ...base, status: 'pending', expiresAt: Timestamp.fromMillis(Date.now() - 1000)
+    });
+  });
   await assertFails(getDoc(doc(env.authenticatedContext('expired', {
     email_verified: true, email: 'employee-expired@example.test'
   }).firestore(), 'stores', storeId, 'invitations', 'invite-expired')));
