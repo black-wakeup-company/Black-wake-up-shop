@@ -536,7 +536,7 @@ test('only the owner can list invitations and revoke a pending invitation', asyn
     email_verified: true, email: 'revoke-me@example.test'
   }).firestore();
   await assertFails(getDocs(collection(employeeDb, 'stores', storeId, 'invitations')));
-  await assertFails(updateDoc(invitationRef.withConverter ? invitationRef : doc(employeeDb, 'stores', storeId, 'invitations', 'invite-revoke-owner'), {
+  await assertFails(updateDoc(doc(employeeDb, 'stores', storeId, 'invitations', 'invite-revoke-owner'), {
     status: 'revoked'
   }));
 });
@@ -550,8 +550,10 @@ test('an accepted invitation cannot be revoked by the owner', async () => {
     createdAt: serverTimestamp(),
     expiresAt: Timestamp.fromMillis(Date.now() + 24 * 60 * 60 * 1000)
   }));
-  await assertSucceeds(updateDoc(invitationRef, {
-    status: 'accepted', acceptedBy: 'already-accepted', acceptedAt: serverTimestamp()
-  }));
+  await env.withSecurityRulesDisabled(async (context) => {
+    await updateDoc(doc(context.firestore(), 'stores', storeId, 'invitations', 'invite-already-accepted'), {
+      status: 'accepted', acceptedBy: 'already-accepted', acceptedAt: new Date()
+    });
+  });
   await assertFails(updateDoc(invitationRef, { status: 'revoked' }));
 });
