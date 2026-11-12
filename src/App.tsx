@@ -9,7 +9,7 @@ import { GoogleDriveBackupModal } from './components/common/GoogleDriveBackupMod
 import { ToastContainer } from './components/common/ToastContainer';
 import { LockScreen } from './components/auth/LockScreen';
 import { EmployeeInvitationView } from './components/auth/EmployeeInvitationView';
-import { EmployeeInvitationView } from './components/auth/EmployeeInvitationView';
+
 
 function BoutiqueApp() {
   const { workspaceMode, setWorkspaceMode, settings } = useBoutique();
