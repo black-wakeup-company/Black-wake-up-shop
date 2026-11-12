@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { onAuthStateChanged } from 'firebase/auth';
 import { auth } from '../../services/firebase';
-import { createEmployeeInvitation, listEmployeeInvitations, revokeEmployeeInvitation, type EmployeeInvitation } from '../../services/employeeService';
+import { createEmployeeInvitation, listEmployeeInvitations, revokeEmployeeInvitation, listEmployees, changeEmployeeRole, suspendEmployee, type EmployeeInvitation, type EmployeeMembership } from '../../services/employeeService';
 import { OwnerAuthPanel } from './OwnerAuthPanel';
 import {
   Cloud,
@@ -37,6 +37,7 @@ export const MultiBoutiqueEmployeesView: React.FC = () => {
   const [employeeRole, setEmployeeRole] = useState<'manager' | 'cashier'>('cashier');
   const [ownerUid, setOwnerUid] = useState(auth.currentUser?.uid || '');
   const [invitations, setInvitations] = useState<EmployeeInvitation[]>([]);
+  const [employees, setEmployees] = useState<EmployeeMembership[]>([]);
   const [busy, setBusy] = useState(false);
   const [feedback, setFeedback] = useState('');
   const [error, setError] = useState('');
@@ -52,7 +53,37 @@ export const MultiBoutiqueEmployeesView: React.FC = () => {
     finally { setBusy(false); }
   };
 
-  useEffect(() => { void refreshInvitations(); }, [ownerUid]);
+  const refreshEmployees = async () => {
+    if (!REMOTE_INVITATIONS_ENABLED || !ownerUid) return;
+    setBusy(true); setError('');
+    try { setEmployees(await listEmployees(ownerUid)); }
+    catch (cause) { setError(cause instanceof Error ? cause.message : 'Impossible de charger les employés.'); }
+    finally { setBusy(false); }
+  };
+
+  const updateEmployeeRole = async (employeeUid: string, role: 'manager' | 'cashier') => {
+    if (!REMOTE_INVITATIONS_ENABLED || !ownerUid) return;
+    setBusy(true); setError(''); setFeedback('');
+    try {
+      await changeEmployeeRole(ownerUid, employeeUid, role);
+      setFeedback('Rôle de l’employé mis à jour.');
+      await refreshEmployees();
+    } catch (cause) { setError(cause instanceof Error ? cause.message : 'Impossible de modifier ce rôle.'); }
+    finally { setBusy(false); }
+  };
+
+  const suspendEmployeeAccess = async (employeeUid: string) => {
+    if (!REMOTE_INVITATIONS_ENABLED || !ownerUid) return;
+    setBusy(true); setError(''); setFeedback('');
+    try {
+      await suspendEmployee(ownerUid, employeeUid);
+      setFeedback('Accès de l’employé suspendu.');
+      await refreshEmployees();
+    } catch (cause) { setError(cause instanceof Error ? cause.message : 'Impossible de suspendre cet employé.'); }
+    finally { setBusy(false); }
+  };
+
+  useEffect(() => { void refreshInvitations(); void refreshEmployees(); }, [ownerUid]);
 
   const createInvitation = async (event: React.FormEvent) => {
     event.preventDefault();
@@ -176,6 +207,50 @@ export const MultiBoutiqueEmployeesView: React.FC = () => {
           <Link2 className="mt-0.5 h-4 w-4 shrink-0" />
           <p>Après activation, un lien individuel pourra être partagé par WhatsApp. Aucun e-mail automatique n’est envoyé par cette application à ce stade.</p>
         </div>
+      </section>
+
+      <section className="rounded-2xl border border-slate-200 bg-white p-5 sm:p-6">
+        <div className="flex flex-wrap items-center justify-between gap-2">
+          <div className="flex items-center gap-2">
+            <Users className="h-5 w-5 text-emerald-700" />
+            <h3 className="text-sm font-bold text-slate-900">Employés actifs et accès</h3>
+          </div>
+          <button type="button" disabled={!REMOTE_INVITATIONS_ENABLED || busy} onClick={() => void refreshEmployees()} className="rounded-lg border border-slate-200 px-2 py-1 text-[10px] font-semibold text-slate-600 disabled:opacity-40">Actualiser</button>
+        </div>
+        {!REMOTE_INVITATIONS_ENABLED ? (
+          <div className="mt-4 rounded-xl border border-dashed border-slate-300 bg-slate-50 px-4 py-7 text-center">
+            <Ban className="mx-auto h-6 w-6 text-slate-400" />
+            <p className="mt-2 text-xs font-semibold text-slate-700">Gestion des employés non connectée</p>
+            <p className="mt-1 text-[11px] leading-5 text-slate-500">Les profils, rôles et suspensions seront consultables après activation approuvée des règles Firestore.</p>
+          </div>
+        ) : employees.length === 0 ? (
+          <p className="mt-4 rounded-xl border border-dashed border-slate-300 bg-slate-50 px-4 py-7 text-center text-xs text-slate-500">Aucun employé enregistré.</p>
+        ) : (
+          <div className="mt-4 space-y-2">
+            {employees.map(employee => (
+              <article key={employee.uid} className="flex flex-col gap-3 rounded-xl border border-slate-200 p-3 sm:flex-row sm:items-center sm:justify-between">
+                <div className="min-w-0">
+                  <p className="truncate text-xs font-bold text-slate-800">{employee.displayName || 'Employé'}</p>
+                  <p className="truncate text-[11px] text-slate-500">{employee.email}</p>
+                  <p className="mt-1 text-[10px] font-semibold text-slate-500">
+                    {employee.role === 'manager' ? 'Gérant' : 'Caissier'} · {employee.active ? 'Accès actif' : employee.status === 'suspended' ? 'Suspendu' : 'En attente'}
+                  </p>
+                </div>
+                <div className="flex flex-wrap items-center gap-2">
+                  <select aria-label={`Rôle de ${employee.displayName || employee.email}`} value={employee.role}
+                    disabled={busy || !employee.active}
+                    onChange={event => void updateEmployeeRole(employee.uid, event.target.value as 'manager' | 'cashier')}
+                    className="rounded-lg border border-slate-300 bg-white px-2 py-2 text-[11px] text-slate-700 disabled:opacity-50">
+                    <option value="cashier">Caissier</option>
+                    <option value="manager">Gérant</option>
+                  </select>
+                  {employee.active && <button type="button" disabled={busy} onClick={() => void suspendEmployeeAccess(employee.uid)}
+                    className="rounded-lg border border-rose-200 px-2.5 py-2 text-[10px] font-bold text-rose-700 disabled:opacity-40">Suspendre</button>}
+                </div>
+              </article>
+            ))}
+          </div>
+        )}
       </section>
 
       <section className="rounded-2xl border border-slate-200 bg-white p-5 sm:p-6">
