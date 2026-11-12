@@ -7,6 +7,7 @@ import {
   query,
   orderBy,
   serverTimestamp,
+  Timestamp,
   runTransaction,
   updateDoc,
   type DocumentData
@@ -47,41 +48,45 @@ const requireOwner = async (storeId: string) => {
   return user;
 };
 
-/**
- * Creates a pending membership for an already registered employee UID.
- * Firebase Auth account creation is intentionally separate: no Admin SDK,
- * Cloud Functions, or owner-handled employee passwords are used.
- */
+/** Creates an email-based invitation; acceptance still requires the invited verified email. */
 export const createEmployeeInvitation = async (
   storeId: string,
-  employee: { uid: string; email: string; displayName: string; role: EmployeeRole }
-): Promise<void> => {
+  employee: { email: string; displayName: string; role: EmployeeRole }
+): Promise<string> => {
   await requireOwner(storeId);
-  const uid = employee.uid.trim();
   const email = employee.email.trim().toLowerCase();
   const displayName = employee.displayName.trim();
-  if (!uid || uid === storeId) throw new Error('Identifiant employé invalide.');
   if (!email.includes('@') || !displayName) throw new Error('E-mail ou nom employé invalide.');
   if (!['manager', 'cashier'].includes(employee.role)) throw new Error('Rôle employé invalide.');
-
-  const memberRef = doc(db, 'stores', storeId, 'members', uid);
+  const invitationRef = doc(collection(db, 'stores', storeId, 'invitations'));
+  const expiresAt = Timestamp.fromMillis(Date.now() + 7 * 24 * 60 * 60 * 1000);
   await runTransaction(db, async (transaction) => {
-    const existing = await transaction.get(memberRef);
-    if (existing.exists()) {
-      throw new Error('Ce compte possède déjà une adhésion dans cette boutique.');
-    }
-    transaction.set(memberRef, {
-      uid,
-      role: employee.role,
-      displayName,
-      email,
-      active: false,
-      status: 'pending',
-      createdAt: serverTimestamp()
-    });
+    transaction.set(invitationRef, { email, displayName, role: employee.role, status: 'pending',
+      createdBy: auth.currentUser!.uid, createdAt: serverTimestamp(), expiresAt });
   });
+  return invitationRef.id;
 };
 
+/** Accepts an invitation and creates the active membership in one transaction. */
+export const acceptEmployeeInvitation = async (storeId: string, invitationId: string): Promise<void> => {
+  const user = await requireVerifiedSession();
+  if (!storeId || storeId === user.uid || !invitationId.trim()) throw new Error('Lien d’invitation invalide.');
+  const invitationRef = doc(db, 'stores', storeId, 'invitations', invitationId);
+  const memberRef = doc(db, 'stores', storeId, 'members', user.uid);
+  await runTransaction(db, async (transaction) => {
+    const [invitationSnapshot, memberSnapshot] = await Promise.all([transaction.get(invitationRef), transaction.get(memberRef)]);
+    if (!invitationSnapshot.exists()) throw new Error('Invitation introuvable.');
+    if (memberSnapshot.exists()) throw new Error('Ce compte possède déjà un accès à cette boutique.');
+    const invitation = invitationSnapshot.data() as DocumentData;
+    if (invitation.status !== 'pending') throw new Error('Cette invitation n’est plus disponible.');
+    if (!(invitation.expiresAt instanceof Timestamp) || invitation.expiresAt.toMillis() <= Date.now()) throw new Error('Cette invitation a expiré.');
+    if (String(invitation.email).trim().toLowerCase() !== (user.email || '').trim().toLowerCase()) throw new Error('Cette invitation ne correspond pas à votre adresse e-mail.');
+    if (!['manager', 'cashier'].includes(invitation.role)) throw new Error('Rôle d’invitation invalide.');
+    transaction.set(memberRef, { uid: user.uid, role: invitation.role, displayName: invitation.displayName,
+      email: invitation.email, active: true, status: 'active', createdAt: serverTimestamp(), invitationId });
+    transaction.update(invitationRef, { status: 'accepted', acceptedBy: user.uid, acceptedAt: serverTimestamp() });
+  });
+};
 export const listEmployees = async (storeId: string): Promise<EmployeeMembership[]> => {
   await requireOwner(storeId);
   const membersQuery = query(
