@@ -185,6 +185,23 @@ export const suspendEmployee = async (
   });
 };
 
+/** Reactivates only a previously suspended employee; pending invitations stay employee-activated. */
+export const reactivateEmployee = async (
+  storeId: string,
+  employeeUid: string
+): Promise<void> => {
+  await requireOwner(storeId);
+  if (!employeeUid || employeeUid === storeId) throw new Error('Employé invalide.');
+  const memberRef = doc(db, 'stores', storeId, 'members', employeeUid);
+  const snapshot = await getDoc(memberRef);
+  if (!snapshot.exists()) throw new Error('Employé introuvable.');
+  const member = snapshot.data() as DocumentData;
+  if (member.status !== 'suspended' || member.active !== false) {
+    throw new Error('Seul un employé suspendu peut être réactivé.');
+  }
+  await updateDoc(memberRef, { active: true, status: 'active' });
+};
+
 /**
  * Reads only the signed-in employee's invitation in the boutique identified
  * by the invitation link. Firestore rules verify the UID and verified email.
