@@ -516,3 +516,42 @@ test('expired or revoked invitations cannot be read or accepted', async () => {
     email_verified: true, email: 'employee-expired@example.test'
   }).firestore(), 'stores', storeId, 'invitations', 'invite-revoked')));
 });
+
+
+test('only the owner can list invitations and revoke a pending invitation', async () => {
+  const ownerDb = dbFor(ownerUid);
+  const invitationRef = doc(ownerDb, 'stores', storeId, 'invitations', 'invite-revoke-owner');
+  await assertSucceeds(setDoc(invitationRef, {
+    email: 'revoke-me@example.test', displayName: 'Revoke Me',
+    role: 'cashier', status: 'pending', createdBy: ownerUid,
+    createdAt: serverTimestamp(),
+    expiresAt: Timestamp.fromMillis(Date.now() + 24 * 60 * 60 * 1000)
+  }));
+
+  await assertSucceeds(getDocs(collection(ownerDb, 'stores', storeId, 'invitations')));
+  await assertSucceeds(updateDoc(invitationRef, { status: 'revoked' }));
+  await assertFails(updateDoc(invitationRef, { status: 'pending' }));
+
+  const employeeDb = env.authenticatedContext('revoke-me', {
+    email_verified: true, email: 'revoke-me@example.test'
+  }).firestore();
+  await assertFails(getDocs(collection(employeeDb, 'stores', storeId, 'invitations')));
+  await assertFails(updateDoc(invitationRef.withConverter ? invitationRef : doc(employeeDb, 'stores', storeId, 'invitations', 'invite-revoke-owner'), {
+    status: 'revoked'
+  }));
+});
+
+test('an accepted invitation cannot be revoked by the owner', async () => {
+  const ownerDb = dbFor(ownerUid);
+  const invitationRef = doc(ownerDb, 'stores', storeId, 'invitations', 'invite-already-accepted');
+  await assertSucceeds(setDoc(invitationRef, {
+    email: 'already-accepted@example.test', displayName: 'Accepted',
+    role: 'manager', status: 'pending', createdBy: ownerUid,
+    createdAt: serverTimestamp(),
+    expiresAt: Timestamp.fromMillis(Date.now() + 24 * 60 * 60 * 1000)
+  }));
+  await assertSucceeds(updateDoc(invitationRef, {
+    status: 'accepted', acceptedBy: 'already-accepted', acceptedAt: serverTimestamp()
+  }));
+  await assertFails(updateDoc(invitationRef, { status: 'revoked' }));
+});
