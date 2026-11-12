@@ -296,6 +296,29 @@ test('owner can suspend but cannot activate a pending employee', async () => {
     email: 'pending-suspend@example.test', active: false, status: 'suspended',
     createdAt: (await getDoc(memberRef)).data().createdAt
   }));
+  await assertSucceeds(updateDoc(memberRef, {
+    uid: pendingUid, role: 'cashier', displayName: 'Pending',
+    email: 'pending-suspend@example.test', active: true, status: 'active',
+    createdAt: (await getDoc(memberRef)).data().createdAt
+  }));
+  await assertFails(updateDoc(memberRef, {
+    uid: pendingUid, role: 'manager', displayName: 'Pending',
+    email: 'pending-suspend@example.test', active: true, status: 'active',
+    createdAt: (await getDoc(memberRef)).data().createdAt
+  }));
+
+  const suspendedUid = 'self-reactivate-suspended';
+  const suspendedRef = doc(ownerDb, 'stores', storeId, 'members', suspendedUid);
+  await assertSucceeds(setDoc(suspendedRef, {
+    uid: suspendedUid, role: 'cashier', displayName: 'Suspended',
+    email: 'suspended@example.test', active: false, status: 'suspended', createdAt: serverTimestamp()
+  }));
+  const suspendedEmployeeDb = env.authenticatedContext(suspendedUid, {
+    email_verified: true, email: 'suspended@example.test'
+  }).firestore();
+  await assertFails(updateDoc(doc(suspendedEmployeeDb, 'stores', storeId, 'members', suspendedUid), {
+    active: true, status: 'active'
+  }));
 });
 
 test('cashier cannot delete sales or edit sales', async () => {
