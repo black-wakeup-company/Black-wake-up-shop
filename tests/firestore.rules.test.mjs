@@ -199,7 +199,9 @@ test('owner can change employee role and suspension cannot be self-reversed', as
     createdAt: serverTimestamp()
   }));
 
-  const employeeDb = dbFor(employeeUid, true);
+  const employeeDb = env.authenticatedContext(employeeUid, {
+    email_verified: true, email: 'role-change@example.test'
+  }).firestore();
   await assertSucceeds(updateDoc(doc(employeeDb, 'stores', storeId, 'members', employeeUid), {
     active: true, status: 'active'
   }));
