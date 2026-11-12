@@ -16,6 +16,7 @@ import {
   updateDoc,
   deleteDoc,
   serverTimestamp,
+  Timestamp,
   runTransaction
 } from 'firebase/firestore';
 
@@ -426,4 +427,90 @@ test('membership lookup is limited to verified matching email, own record, or ow
   await assertSucceeds(getDocs(collection(ownerDb, 'stores', storeId, 'members')));
   await assertFails(getDoc(doc(cashierDb, 'stores', otherOwnerUid, 'members', otherOwnerUid)));
   await assertFails(getDocs(collection(cashierDb, 'stores', storeId, 'members')));
+});
+
+
+test('owner can create an email invitation and only the matching verified email can read it', async () => {
+  const ownerDb = dbFor(ownerUid);
+  const invitationRef = doc(ownerDb, 'stores', storeId, 'invitations', 'invite-email-1');
+  await assertSucceeds(setDoc(invitationRef, {
+    email: 'new-employee@example.test',
+    displayName: 'New Employee',
+    role: 'cashier',
+    status: 'pending',
+    createdBy: ownerUid,
+    createdAt: serverTimestamp(),
+    expiresAt: Timestamp.fromMillis(Date.now() + 24 * 60 * 60 * 1000)
+  }));
+
+  const matching = env.authenticatedContext('new-employee', {
+    email_verified: true, email: 'new-employee@example.test'
+  }).firestore();
+  const wrongEmail = env.authenticatedContext('attacker', {
+    email_verified: true, email: 'attacker@example.test'
+  }).firestore();
+  const unverified = env.authenticatedContext('new-employee', {
+    email_verified: false, email: 'new-employee@example.test'
+  }).firestore();
+  await assertSucceeds(getDoc(doc(matching, 'stores', storeId, 'invitations', 'invite-email-1')));
+  await assertFails(getDoc(doc(wrongEmail, 'stores', storeId, 'invitations', 'invite-email-1')));
+  await assertFails(getDoc(doc(unverified, 'stores', storeId, 'invitations', 'invite-email-1')));
+});
+
+test('verified invitee accepts once and creates membership atomically', async () => {
+  const ownerDb = dbFor(ownerUid);
+  const invitationRef = doc(ownerDb, 'stores', storeId, 'invitations', 'invite-accept-1');
+  await assertSucceeds(setDoc(invitationRef, {
+    email: 'accept-me@example.test', displayName: 'Accepted Employee',
+    role: 'manager', status: 'pending', createdBy: ownerUid,
+    createdAt: serverTimestamp(),
+    expiresAt: Timestamp.fromMillis(Date.now() + 24 * 60 * 60 * 1000)
+  }));
+
+  const employeeDb = env.authenticatedContext('accepted-employee', {
+    email_verified: true, email: 'accept-me@example.test'
+  }).firestore();
+  const memberRef = doc(employeeDb, 'stores', storeId, 'members', 'accepted-employee');
+  await assertSucceeds(runTransaction(employeeDb, async (transaction) => {
+    const invitation = await transaction.get(doc(employeeDb, 'stores', storeId, 'invitations', 'invite-accept-1'));
+    const memberSnapshot = await transaction.get(memberRef);
+    assert.equal(invitation.data().status, 'pending');
+    assert.equal(memberSnapshot.exists(), false);
+    transaction.set(memberRef, {
+      uid: 'accepted-employee', role: 'manager', displayName: 'Accepted Employee',
+      email: 'accept-me@example.test', active: true, status: 'active',
+      createdAt: serverTimestamp(), invitationId: 'invite-accept-1'
+    });
+    transaction.update(doc(employeeDb, 'stores', storeId, 'invitations', 'invite-accept-1'), {
+      status: 'accepted', acceptedBy: 'accepted-employee', acceptedAt: serverTimestamp()
+    });
+  }));
+  await assertSucceeds(getDoc(memberRef));
+  await assertFails(updateDoc(doc(employeeDb, 'stores', storeId, 'invitations', 'invite-accept-1'), {
+    status: 'accepted', acceptedBy: 'accepted-employee', acceptedAt: serverTimestamp()
+  }));
+});
+
+test('expired or revoked invitations cannot be read or accepted', async () => {
+  const ownerDb = dbFor(ownerUid);
+  const expiredRef = doc(ownerDb, 'stores', storeId, 'invitations', 'invite-expired');
+  const revokedRef = doc(ownerDb, 'stores', storeId, 'invitations', 'invite-revoked');
+  const base = {
+    email: 'employee-expired@example.test', displayName: 'Employee',
+    role: 'cashier', createdBy: ownerUid, createdAt: serverTimestamp()
+  };
+  await assertSucceeds(setDoc(expiredRef, {
+    ...base, status: 'pending', expiresAt: Timestamp.fromMillis(Date.now() - 1000)
+  }));
+  await assertFails(getDoc(doc(env.authenticatedContext('expired', {
+    email_verified: true, email: 'employee-expired@example.test'
+  }).firestore(), 'stores', storeId, 'invitations', 'invite-expired')));
+
+  await assertSucceeds(setDoc(revokedRef, {
+    ...base, status: 'pending', expiresAt: Timestamp.fromMillis(Date.now() + 24 * 60 * 60 * 1000)
+  }));
+  await assertSucceeds(updateDoc(revokedRef, { status: 'revoked' }));
+  await assertFails(getDoc(doc(env.authenticatedContext('revoked', {
+    email_verified: true, email: 'employee-expired@example.test'
+  }).firestore(), 'stores', storeId, 'invitations', 'invite-revoked')));
 });
