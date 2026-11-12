@@ -20,6 +20,9 @@ interface Props {
 
 type Mode = 'login' | 'register';
 
+// Keep acceptance blocked until the owner approves coordinated Firestore rules activation.
+const REMOTE_INVITATION_ACCEPTANCE_ENABLED = false;
+
 export const EmployeeInvitationView: React.FC<Props> = ({ storeId, invitationId }) => {
   const [user, setUser] = useState<User | null>(auth.currentUser);
   const [mode, setMode] = useState<Mode>('login');
@@ -147,7 +150,8 @@ export const EmployeeInvitationView: React.FC<Props> = ({ storeId, invitationId 
                   <button type="button" disabled={busy} onClick={refreshVerification} className="rounded-lg border border-slate-300 bg-white px-3 py-2 text-xs font-semibold text-slate-700">J’ai vérifié mon e-mail</button>
                 </div>
               )}
-              <button type="button" disabled={busy || !user.emailVerified} onClick={accept} className="mt-4 flex w-full items-center justify-center gap-2 rounded-lg bg-emerald-700 px-4 py-3 text-sm font-bold text-white disabled:cursor-not-allowed disabled:opacity-40">
+              {!REMOTE_INVITATION_ACCEPTANCE_ENABLED && <p className="mt-3 rounded-lg border border-amber-200 bg-amber-50 p-3 text-xs leading-5 text-amber-900">L’acceptation distante est temporairement verrouillée. L’authentification peut être testée, mais aucun accès boutique ne sera créé avant validation et activation des règles Firestore.</p>}
+              <button type="button" disabled={busy || !user.emailVerified || !REMOTE_INVITATION_ACCEPTANCE_ENABLED} onClick={accept} className="mt-4 flex w-full items-center justify-center gap-2 rounded-lg bg-emerald-700 px-4 py-3 text-sm font-bold text-white disabled:cursor-not-allowed disabled:opacity-40">
                 {busy ? <Loader2 className="h-4 w-4 animate-spin" /> : <CheckCircle2 className="h-4 w-4" />} Accepter l’invitation
               </button>
             </div>
