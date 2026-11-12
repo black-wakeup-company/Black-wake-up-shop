@@ -125,6 +125,10 @@ service cloud.firestore {
           (memberUid == request.auth.uid && request.auth.uid == storeId)
           || (memberUid == request.auth.uid
             && request.auth.token.email_verified == true
+            && resource == null
+            && request.auth.uid != storeId)
+          || (memberUid == request.auth.uid
+            && request.auth.token.email_verified == true
             && resource != null
             && resource.data.email == request.auth.token.email)
           || isStoreOwner(storeId)
