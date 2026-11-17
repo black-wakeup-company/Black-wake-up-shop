@@ -102,6 +102,16 @@ test('owner can provision a store and owner membership atomically on first login
 });
 
 
+test('owner cannot change the primary currency to an unsupported value', async () => {
+  const db = dbFor(ownerUid);
+  await assertFails(updateDoc(doc(db, 'stores', storeId), {
+    primaryCurrency: 'USD'
+  }));
+  await assertSucceeds(updateDoc(doc(db, 'stores', storeId), {
+    primaryCurrency: 'CDF'
+  }));
+});
+
 test('owner provisioning rejects an unsupported primary currency', async () => {
   const unsupportedOwnerUid = 'unsupported-currency-owner';
   const db = dbFor(unsupportedOwnerUid);

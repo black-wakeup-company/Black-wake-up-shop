@@ -82,14 +82,16 @@ service cloud.firestore {
         && request.resource.data.schemaVersion == 1;
 
       allow update: if isStoreOwner(storeId)
+        && request.resource.data.keys().hasOnly([
+          'ownerUid', 'name', 'industry', 'primaryCurrency', 'ownerEmail', 'createdAt', 'schemaVersion'
+        ])
         && request.resource.data.ownerUid == resource.data.ownerUid
         && request.resource.data.ownerUid == request.auth.uid
         && request.resource.data.schemaVersion == resource.data.schemaVersion
         && request.resource.data.name is string
         && request.resource.data.name.size() > 0
         && request.resource.data.name.size() <= 100
-        && request.resource.data.primaryCurrency is string
-        && request.resource.data.primaryCurrency.matches('^[A-Z]{3}$');
+        && request.resource.data.primaryCurrency == 'CDF';
 
       allow delete: if false;
 
