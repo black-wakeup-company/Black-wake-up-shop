@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { getScopedStorageKey } from '../utils/tenantStorage';
 import { mergeRestoredSettings } from '../utils/mergeRestoredSettings';
+import { mergeTenantSettings } from '../utils/mergeTenantSettings';
 import {
   Product,
   CartItem,
@@ -291,7 +292,7 @@ export const BoutiqueProvider: React.FC<{ children: React.ReactNode; storeId?: s
     const baseSettings = { ...(isTenant ? createEmptySettings() : DEFAULT_SETTINGS), ...(initialSettings || {}) };
     try {
       const saved = localStorage.getItem(storageKey('SETTINGS'));
-      return saved ? { ...baseSettings, ...JSON.parse(saved) } : baseSettings;
+      return saved ? mergeTenantSettings(baseSettings, JSON.parse(saved), isTenant) : baseSettings;
     } catch {
       return baseSettings;
     }

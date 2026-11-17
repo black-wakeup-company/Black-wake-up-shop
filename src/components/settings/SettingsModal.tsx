@@ -1,4 +1,4 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { useBoutique } from '../../context/BoutiqueContext';
 import {
   Save,
@@ -17,9 +17,10 @@ import { ImageUploader } from '../common/ImageUploader';
 interface SettingsModalProps {
   isOpen: boolean;
   onClose: () => void;
+  onUpdateStoreName?: (name: string) => Promise<void>;
 }
 
-export const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose }) => {
+export const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose, onUpdateStoreName }) => {
   const {
     settings,
     updateSettings,
@@ -47,12 +48,39 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose })
   const [taxEnabled, setTaxEnabled] = useState(settings.taxEnabled);
 
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const [saving, setSaving] = useState(false);
+  const [saveError, setSaveError] = useState('');
+
+  useEffect(() => {
+    if (!isOpen) return;
+    setBoutiqueName(settings.boutiqueName);
+    setSlogan(settings.slogan);
+    setLogo(settings.logo || '');
+    setAddress(settings.address);
+    setPhone(settings.phone);
+    setEmail(settings.email);
+    setNifOrSiret(settings.nifOrSiret);
+    setReceiptFooterMessage(settings.receiptFooterMessage);
+    setCashierName(settings.cashierName);
+    setCurrencySymbol(settings.currencySymbol || 'FC');
+    setCurrencyPosition(settings.currencyPosition);
+    setExchangeRateUSD((settings.exchangeRateUSD || 2850).toString());
+    setTaxRate(settings.taxRate.toString());
+    setTaxEnabled(settings.taxEnabled);
+    setSaveError('');
+  }, [isOpen, settings]);
 
   if (!isOpen) return null;
 
-  const handleSave = (e: React.FormEvent) => {
+  const handleSave = async (e: React.FormEvent) => {
     e.preventDefault();
-    updateSettings({
+    setSaving(true);
+    setSaveError('');
+    try {
+      if (onUpdateStoreName && boutiqueName.trim() !== settings.boutiqueName) {
+        await onUpdateStoreName(boutiqueName.trim());
+      }
+      updateSettings({
       boutiqueName: boutiqueName.trim(),
       slogan: slogan.trim(),
       logo: logo.trim() || undefined,
@@ -67,8 +95,13 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose })
       exchangeRateUSD: Math.max(1, parseFloat(exchangeRateUSD) || 2850),
       taxRate: parseFloat(taxRate) || 0,
       taxEnabled
-    });
-    onClose();
+      });
+      onClose();
+    } catch (error) {
+      setSaveError(error instanceof Error ? error.message : 'Impossible d’enregistrer les paramètres. Réessayez.');
+    } finally {
+      setSaving(false);
+    }
   };
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -443,6 +476,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose })
             )}
           </div>
 
+          {saveError && <p role="alert" className="mx-6 mb-3 rounded-lg border border-rose-200 bg-rose-50 px-3 py-2 text-xs text-rose-700">{saveError}</p>}
           {/* Footer actions */}
           <div className="px-6 py-4 bg-slate-50 border-t border-slate-200 flex justify-end gap-2">
             <button
@@ -454,10 +488,11 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose })
             </button>
             <button
               type="submit"
-              className="px-5 py-2 text-xs font-semibold text-white bg-slate-900 hover:bg-slate-800 rounded-lg transition-colors flex items-center gap-1.5"
+              disabled={saving}
+              className="px-5 py-2 text-xs font-semibold text-white bg-slate-900 hover:bg-slate-800 rounded-lg transition-colors flex items-center gap-1.5 disabled:opacity-60"
             >
               <Save className="w-3.5 h-3.5" />
-              <span>Enregistrer</span>
+              <span>{saving ? 'Enregistrement…' : 'Enregistrer'}</span>
             </button>
           </div>
         </form>

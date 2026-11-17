@@ -57,6 +57,35 @@ export const getOwnerStore = async (user: User): Promise<OwnerStore | null> => {
 };
 
 /**
+ * Updates only the canonical commercial name of the authenticated owner's store.
+ */
+export const updateOwnerStoreName = async (user: User, nextName: string): Promise<void> => {
+  assertCurrentVerifiedOwner(user);
+  const name = nextName.trim();
+  if (!name || name.length > 100) {
+    throw new Error('Le nom de la boutique est obligatoire (100 caractères maximum).');
+  }
+
+  const storeRef = doc(db, 'stores', user.uid);
+  const memberRef = doc(db, 'stores', user.uid, 'members', user.uid);
+  await runTransaction(db, async (transaction) => {
+    const [storeSnapshot, memberSnapshot] = await Promise.all([
+      transaction.get(storeRef),
+      transaction.get(memberRef)
+    ]);
+    if (!storeSnapshot.exists() || !memberSnapshot.exists()) {
+      throw new Error('La boutique propriétaire est introuvable ou incomplète.');
+    }
+    const store = storeSnapshot.data();
+    const member = memberSnapshot.data();
+    if (store.ownerUid !== user.uid || member.uid !== user.uid || member.role !== 'owner' || member.active !== true) {
+      throw new Error('Seul le propriétaire actif peut modifier le nom de cette boutique.');
+    }
+    transaction.update(storeRef, { name });
+  });
+};
+
+/**
  * Creates a store only after the owner confirms its name and primary currency.
  * Existing stores can complete missing profile fields without creating duplicates.
  */

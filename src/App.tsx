@@ -11,7 +11,7 @@ import { LockScreen } from './components/auth/LockScreen';
 import { EmployeeInvitationView } from './components/auth/EmployeeInvitationView';
 import { OwnerLoginScreen } from './components/auth/OwnerLoginScreen';
 import { subscribeToOwnerAuth, signOutOwner } from './services/ownerAuth';
-import { getOwnerStore, saveOwnerStoreProfile, OwnerStore } from './services/storeService';
+import { getOwnerStore, saveOwnerStoreProfile, updateOwnerStoreName, OwnerStore } from './services/storeService';
 import { User } from 'firebase/auth';
 
 type GateState =
@@ -205,7 +205,7 @@ function LegacyMigrationNotice({ onDismiss }: { onDismiss: () => void }) {
   );
 }
 
-function BoutiqueApp({ ownerEmail, storeId, onSignOut }: { ownerEmail: string | null; storeId: string; onSignOut: () => void }) {
+function BoutiqueApp({ ownerEmail, storeId, onSignOut, onUpdateStoreName }: { ownerEmail: string | null; storeId: string; onSignOut: () => void; onUpdateStoreName: (name: string) => Promise<void> }) {
   const { workspaceMode, setWorkspaceMode, settings } = useBoutique();
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const [isAdminPinOpen, setIsAdminPinOpen] = useState(false);
@@ -249,7 +249,7 @@ function BoutiqueApp({ ownerEmail, storeId, onSignOut }: { ownerEmail: string | 
         </div>
       </footer>
       <AdminPinModal isOpen={isAdminPinOpen} onClose={() => setIsAdminPinOpen(false)} onSuccess={() => setIsAdminPinOpen(false)} />
-      <SettingsModal isOpen={isSettingsOpen} onClose={() => setIsSettingsOpen(false)} />
+      <SettingsModal isOpen={isSettingsOpen} onClose={() => setIsSettingsOpen(false)} onUpdateStoreName={onUpdateStoreName} />
       <GoogleDriveBackupModal isOpen={isCloudSyncOpen} onClose={() => setIsCloudSyncOpen(false)} storeId={storeId} />
       <ToastContainer />
       <LockScreen />
@@ -319,7 +319,7 @@ function OwnerGate() {
   }
   return (
     <BoutiqueProvider key={gate.store.storeId} storeId={gate.store.storeId} initialSettings={{ boutiqueName: gate.store.name || 'Ma boutique', currencySymbol: 'FC' }}>
-      <BoutiqueApp ownerEmail={gate.user.email} storeId={gate.store.storeId} onSignOut={handleSignOut} />
+      <BoutiqueApp ownerEmail={gate.user.email} storeId={gate.store.storeId} onSignOut={handleSignOut} onUpdateStoreName={(name) => updateOwnerStoreName(gate.user, name)} />
     </BoutiqueProvider>
   );
 }
