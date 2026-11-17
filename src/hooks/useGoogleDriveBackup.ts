@@ -59,7 +59,7 @@ export function useGoogleDriveBackup(
     } finally {
       setIsLoading(false);
     }
-  }, [isConnected]);
+  }, [isConnected, storeId]);
 
   useEffect(() => {
     if (isConnected) {
@@ -75,7 +75,7 @@ export function useGoogleDriveBackup(
         setCurrentUser(res.user);
         setIsConnected(true);
         showToast(`Connecté à Google Drive (${res.user.email})`, 'success');
-        const items = await listDriveBackups();
+        const items = await listDriveBackups(storeId);
         setBackups(items);
       }
     } catch (err: any) {
@@ -161,7 +161,7 @@ export function useGoogleDriveBackup(
           await uploadBackupToDrive(data, undefined, storeId);
           const now = new Date().toISOString();
           setLastBackupTime(now);
-          localStorage.setItem('boutiquepro_last_drive_backup', now);
+          localStorage.setItem(getDriveBackupStorageKey(storeId, 'last_backup'), now);
           console.info('Auto-backup to Google Drive succeeded at', now);
         }
       } catch (e) {

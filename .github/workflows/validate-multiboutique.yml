@@ -44,6 +44,9 @@ jobs:
       - name: Tenant local storage isolation tests
         run: npm run test:tenant-storage
 
+      - name: Google Drive backup scope tests
+        run: npm run test:drive-backup-scope
+
       - name: Firestore rules emulator tests
         run: npm run test:rules
 
