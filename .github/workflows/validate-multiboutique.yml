@@ -41,6 +41,9 @@ jobs:
       - name: Sync coordinator tests
         run: npm run test:coordinator
 
+      - name: Tenant local storage isolation tests
+        run: npm run test:tenant-storage
+
       - name: Firestore rules emulator tests
         run: npm run test:rules
 
