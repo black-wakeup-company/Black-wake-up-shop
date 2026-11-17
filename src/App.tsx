@@ -112,28 +112,13 @@ function OwnerSetupScreen({ user, existingStore, onSaved }: {
             </select>
           </div>
           <div>
-            <label className="mb-2 block text-sm font-semibold">Devise principale *</label>
+            <label className="mb-2 block text-sm font-semibold">Devise principale * (actuellement CDF)</label>
             <select required value={currency} onChange={e => setCurrency(e.target.value)}
               className="w-full rounded-xl border border-white/10 bg-slate-950 px-4 py-3 text-sm outline-none focus:border-emerald-400">
               <option value="">Sélectionner la devise principale</option>
-              <option value="USD">USD — Dollar américain</option>
-              <option value="CDF">CDF — Franc congolais</option>
-              <option value="EUR">EUR — Euro</option>
-              <option value="GBP">GBP — Livre sterling</option>
-              <option value="KES">KES — Shilling kényan</option>
-              <option value="UGX">UGX — Shilling ougandais</option>
-              <option value="RWF">RWF — Franc rwandais</option>
-              <option value="TZS">TZS — Shilling tanzanien</option>
-              <option value="ZAR">ZAR — Rand sud-africain</option>
-              <option value="XAF">XAF — Franc CFA (Afrique centrale)</option>
-              <option value="XOF">XOF — Franc CFA (Afrique de l’Ouest)</option>
-              <option value="CAD">CAD — Dollar canadien</option>
-              <option value="CHF">CHF — Franc suisse</option>
-              <option value="CNY">CNY — Yuan chinois</option>
-              <option value="INR">INR — Roupie indienne</option>
-              <option value="JPY">JPY — Yen japonais</option>
+              <option value="CDF">CDF — Franc congolais (devise de base actuellement prise en charge)</option>
             </select>
-            <p className="mt-2 text-xs leading-5 text-slate-500">Vous pourrez utiliser d’autres devises dans vos opérations. Cette devise servira de référence aux rapports consolidés.</p>
+            <p className="mt-2 text-xs leading-5 text-slate-500">La caisse et les rapports utilisent actuellement le franc congolais (CDF/FC) comme devise de base. La prise en charge d’autres devises principales sera activée avec le moteur multidevise.</p>
           </div>
           {error && <p role="alert" className="rounded-xl border border-rose-400/20 bg-rose-400/10 p-3 text-sm text-rose-200">{error}</p>}
           <button type="submit" disabled={saving || !name.trim() || !currency}

@@ -78,7 +78,7 @@ service cloud.firestore {
         && request.resource.data.name.size() > 0
         && request.resource.data.name.size() <= 100
         && request.resource.data.primaryCurrency is string
-        && request.resource.data.primaryCurrency.matches('^[A-Z]{3}$')
+        && request.resource.data.primaryCurrency == 'CDF'
         && request.resource.data.schemaVersion == 1;
 
       allow update: if isStoreOwner(storeId)

@@ -70,7 +70,7 @@ export const saveOwnerStoreProfile = async (
   const industry = profile.industry?.trim();
 
   if (!name || name.length > 100) throw new Error('Le nom de la boutique est obligatoire (100 caractères maximum).');
-  if (!/^[A-Z]{3}$/.test(primaryCurrency)) throw new Error('Code de devise invalide. Utilisez un code de trois lettres.');
+  if (primaryCurrency !== 'CDF') throw new Error('Pour cette première version, la devise principale prise en charge est le franc congolais (CDF). Les autres devises seront activées avec le moteur multidevise.');
 
   const storeId = user.uid;
   const storeRef = doc(db, 'stores', storeId);

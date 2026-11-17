@@ -82,7 +82,7 @@ test('owner can provision a store and owner membership atomically on first login
     transaction.set(storeRef, {
       ownerUid: newOwnerUid,
       name: 'Ma boutique',
-      primaryCurrency: 'USD',
+      primaryCurrency: 'CDF',
       ownerEmail: 'new-owner@example.test',
       createdAt: serverTimestamp(),
       schemaVersion: 1
@@ -99,6 +99,20 @@ test('owner can provision a store and owner membership atomically on first login
 
   await assertSucceeds(getDoc(storeRef));
   await assertSucceeds(getDoc(memberRef));
+});
+
+
+test('owner provisioning rejects an unsupported primary currency', async () => {
+  const unsupportedOwnerUid = 'unsupported-currency-owner';
+  const db = dbFor(unsupportedOwnerUid);
+  await assertFails(setDoc(doc(db, 'stores', unsupportedOwnerUid), {
+    ownerUid: unsupportedOwnerUid,
+    name: 'Boutique devise non prise en charge',
+    primaryCurrency: 'USD',
+    ownerEmail: 'unsupported@example.test',
+    createdAt: serverTimestamp(),
+    schemaVersion: 1
+  }));
 });
 
 test('owner provisioning rejects an unverified account', async () => {
