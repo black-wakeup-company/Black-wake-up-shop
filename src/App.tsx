@@ -318,7 +318,7 @@ function OwnerGate() {
     return <OwnerSetupScreen user={gate.user} existingStore={gate.store} onSaved={(store) => setGate({ status: 'ready', user: gate.user, store })} />;
   }
   return (
-    <BoutiqueProvider key={gate.store.storeId} storeId={gate.store.storeId} initialSettings={{ boutiqueName: gate.store.name || 'Ma boutique', currencySymbol: gate.store.primaryCurrency || 'USD' }}>
+    <BoutiqueProvider key={gate.store.storeId} storeId={gate.store.storeId} initialSettings={{ boutiqueName: gate.store.name || 'Ma boutique', currencySymbol: gate.store.primaryCurrency === 'CDF' ? 'FC' : 'FC' }}>
       <BoutiqueApp ownerEmail={gate.user.email} storeId={gate.store.storeId} onSignOut={handleSignOut} />
     </BoutiqueProvider>
   );
