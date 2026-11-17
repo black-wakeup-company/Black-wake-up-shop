@@ -150,6 +150,8 @@ function LegacyMigrationNotice({ onDismiss }: { onDismiss: () => void }) {
   const { importDatabaseJSON } = useBoutique();
   const legacyData = useMemo(() => readLegacyData(), []);
   const [message, setMessage] = useState('');
+  const [backupDownloaded, setBackupDownloaded] = useState(false);
+  const [importCompleted, setImportCompleted] = useState(false);
 
   if (!legacyData) return null;
 
@@ -161,13 +163,38 @@ function LegacyMigrationNotice({ onDismiss }: { onDismiss: () => void }) {
     anchor.download = `black-wakeup-ancienne-boutique-${new Date().toISOString().slice(0, 10)}.json`;
     anchor.click();
     URL.revokeObjectURL(url);
+    setBackupDownloaded(true);
     setMessage('Sauvegarde téléchargée. Vos anciennes données restent également sur cet appareil.');
   };
 
   const importLegacy = () => {
+    if (!backupDownloaded) {
+      setMessage('Téléchargez d’abord une sauvegarde avant de lancer l’importation.');
+      return;
+    }
+
+    try {
+      const parsed = JSON.parse(legacyData) as Record<string, unknown>;
+      const arrayFields = ['cashiers', 'products', 'customers', 'sales', 'expenses'];
+      const validArrays = arrayFields.every(field =>
+        parsed[field] === undefined || Array.isArray(parsed[field])
+      );
+      const validObjects = ['settings', 'cashSession'].every(field =>
+        parsed[field] === undefined ||
+        (typeof parsed[field] === 'object' && parsed[field] !== null && !Array.isArray(parsed[field]))
+      );
+      if (!validArrays || !validObjects) {
+        setMessage('Format de sauvegarde non reconnu. Aucune donnée n’a été importée.');
+        return;
+      }
+    } catch {
+      setMessage('Sauvegarde illisible. Aucune donnée n’a été importée.');
+      return;
+    }
+
     if (importDatabaseJSON(legacyData)) {
+      setImportCompleted(true);
       setMessage('Import effectué dans cette boutique. Les anciennes données locales n’ont pas été supprimées.');
-      onDismiss();
     } else {
       setMessage('Import impossible. Les anciennes données restent intactes.');
     }
@@ -180,8 +207,12 @@ function LegacyMigrationNotice({ onDismiss }: { onDismiss: () => void }) {
         <p className="mt-1 text-xs leading-5 text-amber-900">Une ancienne base de boutique existe sur cet appareil. Téléchargez d’abord une sauvegarde, puis choisissez si vous souhaitez l’importer dans cette boutique. Rien ne sera supprimé automatiquement.</p>
         <div className="mt-3 flex flex-wrap gap-2">
           <button onClick={downloadBackup} className="rounded-lg border border-amber-300 bg-white px-3 py-2 text-xs font-bold text-amber-950">Télécharger la sauvegarde</button>
-          <button onClick={importLegacy} className="rounded-lg bg-amber-900 px-3 py-2 text-xs font-bold text-white">Importer les anciennes données</button>
-          <button onClick={onDismiss} className="rounded-lg px-3 py-2 text-xs font-semibold text-amber-900 underline">Continuer sans importer</button>
+          <button onClick={importLegacy} disabled={!backupDownloaded || importCompleted} className="rounded-lg bg-amber-900 px-3 py-2 text-xs font-bold text-white disabled:cursor-not-allowed disabled:opacity-40">Importer les anciennes données</button>
+          {importCompleted ? (
+            <button onClick={onDismiss} className="rounded-lg px-3 py-2 text-xs font-semibold text-amber-900 underline">Terminer</button>
+          ) : (
+            <button onClick={onDismiss} className="rounded-lg px-3 py-2 text-xs font-semibold text-amber-900 underline">Continuer sans importer</button>
+          )}
         </div>
         {message && <p className="mt-2 text-xs text-amber-900">{message}</p>}
       </div>
@@ -246,7 +277,9 @@ function OwnerGate() {
 
   useEffect(() => {
     let active = true;
+    let authEventVersion = 0;
     const unsubscribe = subscribeToOwnerAuth((user) => {
+      const eventVersion = ++authEventVersion;
       if (!active) return;
       if (!user) {
         setGate({ status: 'signedOut' });
@@ -258,7 +291,7 @@ function OwnerGate() {
       }
       setGate({ status: 'checking' });
       getOwnerStore(user).then((store) => {
-        if (!active) return;
+        if (!active || eventVersion !== authEventVersion) return;
         if (!store || !store.name || !store.primaryCurrency) {
           setGate({ status: 'setup', user, store });
         } else {
@@ -266,7 +299,7 @@ function OwnerGate() {
         }
       }).catch((error) => {
         console.error('Owner store lookup failed:', error);
-        if (active) setGate({
+        if (active && eventVersion === authEventVersion) setGate({
           status: 'error',
           message: error instanceof Error ? error.message : 'Impossible de charger votre boutique. Vérifiez votre connexion.'
         });
@@ -274,6 +307,7 @@ function OwnerGate() {
     });
     return () => {
       active = false;
+      authEventVersion += 1;
       unsubscribe();
     };
   }, []);
@@ -293,7 +327,7 @@ function OwnerGate() {
   }
   if (gate.status === 'signedOut') return <OwnerLoginScreen onAuthenticated={() => setGate({ status: 'checking' })} />;
   if (gate.status === 'error') {
-    return <main className="flex min-h-screen items-center justify-center bg-slate-950 px-5 text-white"><div className="max-w-md rounded-2xl border border-rose-300/20 bg-slate-900 p-7"><h1 className="text-xl font-bold">Accès à la boutique impossible</h1><p className="mt-3 text-sm leading-6 text-slate-300">{gate.message}</p><div className="mt-5 flex gap-3"><button onClick={() => window.location.reload()} className="rounded-lg bg-emerald-400 px-4 py-2 text-sm font-bold text-slate-950">Réessayer</button><button onClick={() => signOutOwner()} className="rounded-lg border border-white/20 px-4 py-2 text-sm">Déconnexion</button></div></div></main>;
+    return <main className="flex min-h-screen items-center justify-center bg-slate-950 px-5 text-white"><div className="max-w-md rounded-2xl border border-rose-300/20 bg-slate-900 p-7"><h1 className="text-xl font-bold">Accès à la boutique impossible</h1><p className="mt-3 text-sm leading-6 text-slate-300">{gate.message}</p><div className="mt-5 flex gap-3"><button onClick={() => window.location.reload()} className="rounded-lg bg-emerald-400 px-4 py-2 text-sm font-bold text-slate-950">Réessayer</button><button onClick={() => void handleSignOut()} className="rounded-lg border border-white/20 px-4 py-2 text-sm">Déconnexion</button></div></div></main>;
   }
   if (gate.status === 'setup') {
     return <OwnerSetupScreen user={gate.user} existingStore={gate.store} onSaved={(store) => setGate({ status: 'ready', user: gate.user, store })} />;
