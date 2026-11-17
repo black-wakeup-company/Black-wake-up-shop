@@ -58,7 +58,7 @@ function OwnerSetupScreen({ user, existingStore, onSaved }: {
 }) {
   const [name, setName] = useState(existingStore?.name || '');
   const [industry, setIndustry] = useState(existingStore?.industry || '');
-  const [currency, setCurrency] = useState(existingStore?.primaryCurrency || '');
+  const [currency, setCurrency] = useState(existingStore?.primaryCurrency === 'CDF' ? 'CDF' : '');
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
 
@@ -277,7 +277,7 @@ function OwnerGate() {
       setGate({ status: 'checking' });
       getOwnerStore(user).then((store) => {
         if (!active || eventVersion !== authEventVersion) return;
-        if (!store || !store.name || !store.primaryCurrency) {
+        if (!store || !store.name || store.primaryCurrency !== 'CDF') {
           setGate({ status: 'setup', user, store });
         } else {
           setGate({ status: 'ready', user, store });
