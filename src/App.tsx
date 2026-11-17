@@ -18,7 +18,7 @@ type GateState =
   | { status: 'checking' }
   | { status: 'signedOut' }
   | { status: 'setup'; user: User; store: OwnerStore | null }
-  | { status: 'ready'; user: User; storeId: string }
+  | { status: 'ready'; user: User; store: OwnerStore }
   | { status: 'error'; message: string };
 
 const LEGACY_KEYS = {
@@ -54,7 +54,7 @@ function readLegacyData(): string | null {
 function OwnerSetupScreen({ user, existingStore, onSaved }: {
   user: User;
   existingStore: OwnerStore | null;
-  onSaved: (storeId: string) => void;
+  onSaved: (store: OwnerStore) => void;
 }) {
   const [name, setName] = useState(existingStore?.name || '');
   const [industry, setIndustry] = useState(existingStore?.industry || '');
@@ -73,7 +73,7 @@ function OwnerSetupScreen({ user, existingStore, onSaved }: {
         industry: industry.trim() || undefined,
         primaryCurrency: currency
       });
-      onSaved(store.storeId);
+      onSaved(store);
     } catch (err) {
       console.error('Owner store setup failed:', err);
       setError(err instanceof Error ? err.message : 'La configuration n’a pas pu être enregistrée. Réessayez.');
@@ -262,7 +262,7 @@ function OwnerGate() {
         if (!store || !store.name || !store.primaryCurrency) {
           setGate({ status: 'setup', user, store });
         } else {
-          setGate({ status: 'ready', user, storeId: store.storeId });
+          setGate({ status: 'ready', user, store });
         }
       }).catch((error) => {
         console.error('Owner store lookup failed:', error);
@@ -296,10 +296,10 @@ function OwnerGate() {
     return <main className="flex min-h-screen items-center justify-center bg-slate-950 px-5 text-white"><div className="max-w-md rounded-2xl border border-rose-300/20 bg-slate-900 p-7"><h1 className="text-xl font-bold">Accès à la boutique impossible</h1><p className="mt-3 text-sm leading-6 text-slate-300">{gate.message}</p><div className="mt-5 flex gap-3"><button onClick={() => window.location.reload()} className="rounded-lg bg-emerald-400 px-4 py-2 text-sm font-bold text-slate-950">Réessayer</button><button onClick={() => signOutOwner()} className="rounded-lg border border-white/20 px-4 py-2 text-sm">Déconnexion</button></div></div></main>;
   }
   if (gate.status === 'setup') {
-    return <OwnerSetupScreen user={gate.user} existingStore={gate.store} onSaved={(storeId) => setGate({ status: 'ready', user: gate.user, storeId })} />;
+    return <OwnerSetupScreen user={gate.user} existingStore={gate.store} onSaved={(store) => setGate({ status: 'ready', user: gate.user, store })} />;
   }
   return (
-    <BoutiqueProvider key={gate.storeId} storeId={gate.storeId}>
+    <BoutiqueProvider key={gate.store.storeId} storeId={gate.store.storeId} initialSettings={{ boutiqueName: gate.store.name || 'Ma boutique', currencySymbol: gate.store.primaryCurrency || 'USD' }}>
       <BoutiqueApp ownerEmail={gate.user.email} onSignOut={handleSignOut} />
     </BoutiqueProvider>
   );

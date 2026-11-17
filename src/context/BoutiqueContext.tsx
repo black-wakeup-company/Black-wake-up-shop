@@ -167,7 +167,7 @@ const createEmptyCashSession = (): CashSession => ({
   status: 'closed'
 });
 
-export const BoutiqueProvider: React.FC<{ children: React.ReactNode; storeId?: string }> = ({ children, storeId }) => {
+export const BoutiqueProvider: React.FC<{ children: React.ReactNode; storeId?: string; initialSettings?: Partial<BoutiqueSettings> }> = ({ children, storeId, initialSettings }) => {
   const isTenant = Boolean(storeId);
   const storageKey = (key: keyof typeof STORAGE_KEYS) => getScopedStorageKey(key, storeId);
   // Workspace Mode (caisse vs admin)
@@ -287,11 +287,12 @@ export const BoutiqueProvider: React.FC<{ children: React.ReactNode; storeId?: s
 
   // Settings
   const [settings, setSettings] = useState<BoutiqueSettings>(() => {
+    const baseSettings = { ...(isTenant ? createEmptySettings() : DEFAULT_SETTINGS), ...(initialSettings || {}) };
     try {
       const saved = localStorage.getItem(storageKey('SETTINGS'));
-      return saved ? { ...(isTenant ? createEmptySettings() : DEFAULT_SETTINGS), ...JSON.parse(saved) } : (isTenant ? createEmptySettings() : DEFAULT_SETTINGS);
+      return saved ? { ...baseSettings, ...JSON.parse(saved) } : baseSettings;
     } catch {
-      return isTenant ? createEmptySettings() : DEFAULT_SETTINGS;
+      return baseSettings;
     }
   });
 
