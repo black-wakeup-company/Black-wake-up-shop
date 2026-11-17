@@ -169,7 +169,7 @@ const createEmptyCashSession = (): CashSession => ({
 
 export const BoutiqueProvider: React.FC<{ children: React.ReactNode; storeId?: string; initialSettings?: Partial<BoutiqueSettings> }> = ({ children, storeId, initialSettings }) => {
   const isTenant = Boolean(storeId);
-  const storageKey = (key: keyof typeof STORAGE_KEYS) => getScopedStorageKey(key, storeId);
+  const storageKey = (key: keyof typeof STORAGE_KEYS) => getScopedStorageKey(key, storeId, STORAGE_KEYS[key]);
   // Workspace Mode (caisse vs admin)
   const [workspaceMode, setWorkspaceModeState] = useState<WorkspaceMode>(() => {
     try {
