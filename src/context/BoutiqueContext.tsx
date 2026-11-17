@@ -1,4 +1,5 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
+import { getScopedStorageKey } from '../utils/tenantStorage';
 import {
   Product,
   CartItem,
@@ -134,8 +135,7 @@ const STORAGE_KEYS = {
   CASH_SESSION: 'boutiquepro_cash_session_v2'
 };
 
-const getScopedStorageKey = (key: keyof typeof STORAGE_KEYS, storeId?: string) =>
-  storeId ? `boutiquepro:store:${storeId}:${key.toLowerCase()}:v1` : STORAGE_KEYS[key];
+
 
 const createEmptySettings = (): BoutiqueSettings => ({
   ...DEFAULT_SETTINGS,
