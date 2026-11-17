@@ -50,6 +50,9 @@ jobs:
       - name: Restore settings safety tests
         run: npm run test:restore-settings
 
+      - name: Tenant settings profile consistency tests
+        run: npm run test:tenant-settings
+
       - name: Firestore rules emulator tests
         run: npm run test:rules
 
