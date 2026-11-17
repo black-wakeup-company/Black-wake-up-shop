@@ -30,8 +30,6 @@ service cloud.firestore {
     }
 
     function hasMatchingDocumentId(data, documentId, collectionName) {
-      // Sales keep a human-readable receipt id; syncId is the Firestore key
-      // whenever the technical identifier is present.
       return collectionName == 'sales'
         ? data.id is string
           && data.id.size() > 0
@@ -62,8 +60,6 @@ service cloud.firestore {
     }
 
     match /stores/{storeId} {
-      // The owner may read the exact store document addressed by their UID
-      // during first provisioning; active members may read their store.
       allow get: if (signedIn() && request.auth.uid == storeId) || isActiveMember(storeId);
       allow list: if false;
 
@@ -73,14 +69,27 @@ service cloud.firestore {
         && !exists(/databases/$(database)/documents/stores/$(storeId)/members/$(request.auth.uid))
         && request.resource.data.ownerUid == request.auth.uid
         && request.resource.data.keys().hasOnly([
-          'ownerUid', 'name', 'ownerEmail', 'createdAt', 'schemaVersion'
+          'ownerUid', 'name', 'industry', 'primaryCurrency', 'ownerEmail', 'createdAt', 'schemaVersion'
         ])
+        && request.resource.data.keys().hasAll([
+          'ownerUid', 'name', 'primaryCurrency', 'ownerEmail', 'createdAt', 'schemaVersion'
+        ])
+        && request.resource.data.name is string
+        && request.resource.data.name.size() > 0
+        && request.resource.data.name.size() <= 100
+        && request.resource.data.primaryCurrency is string
+        && request.resource.data.primaryCurrency.matches('^[A-Z]{3}$')
         && request.resource.data.schemaVersion == 1;
 
       allow update: if isStoreOwner(storeId)
         && request.resource.data.ownerUid == resource.data.ownerUid
         && request.resource.data.ownerUid == request.auth.uid
-        && request.resource.data.schemaVersion == resource.data.schemaVersion;
+        && request.resource.data.schemaVersion == resource.data.schemaVersion
+        && request.resource.data.name is string
+        && request.resource.data.name.size() > 0
+        && request.resource.data.name.size() <= 100
+        && request.resource.data.primaryCurrency is string
+        && request.resource.data.primaryCurrency.matches('^[A-Z]{3}$');
 
       allow delete: if false;
 
@@ -117,11 +126,9 @@ service cloud.firestore {
             && getAfter(memberPath(storeId, request.auth.uid)).data.role == resource.data.role
             && getAfter(memberPath(storeId, request.auth.uid)).data.status == 'active');
       }
+
       match /members/{memberUid} {
-        // Members can read only their own membership; owners can list members.
         allow get: if signedIn() && (
-          // During first provisioning, the owner must be able to confirm that
-          // their own membership document does not exist yet.
           (memberUid == request.auth.uid && request.auth.uid == storeId)
           || (memberUid == request.auth.uid
             && request.auth.token.email_verified == true
@@ -135,7 +142,6 @@ service cloud.firestore {
         );
         allow list: if isStoreOwner(storeId);
 
-        // Initial owner membership is created atomically with the store.
         allow create: if (
             signedIn()
             && request.auth.token.email_verified == true
@@ -166,8 +172,6 @@ service cloud.firestore {
             && getAfter(/databases/$(database)/documents/stores/$(storeId)/invitations/$(request.resource.data.invitationId)).data.acceptedBy == request.auth.uid
           );
 
-        // Owners may change roles and suspend employees, but cannot activate
-        // an invitation. Only the invited, verified account can do that.
         allow update: if (
             isStoreOwner(storeId)
             && memberUid != request.auth.uid
@@ -226,8 +230,6 @@ service cloud.firestore {
         allow delete: if hasRole(storeId, ['owner', 'manager']);
       }
 
-      // Stock movements are append-only audit records. Quantities are never
-      // overwritten here; a later sync process can reconcile each movement.
       match /stockMovements/{movementId} {
         allow read: if isActiveMember(storeId);
         allow create: if hasRole(storeId, ['owner', 'manager', 'cashier'])
@@ -281,11 +283,9 @@ service cloud.firestore {
       match /settings/{documentId} {
         allow read: if isActiveMember(storeId) && documentId == 'main';
         allow create, update: if hasRole(storeId, ['owner']) && documentId == 'main';
-        // Deletion is intentionally disabled to match the local outbox.
         allow delete: if false;
       }
 
-      // Deny every not-yet-defined nested path by default.
       match /{document=**} {
         allow read, write: if false;
       }

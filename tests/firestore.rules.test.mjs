@@ -82,6 +82,7 @@ test('owner can provision a store and owner membership atomically on first login
     transaction.set(storeRef, {
       ownerUid: newOwnerUid,
       name: 'Ma boutique',
+      primaryCurrency: 'USD',
       ownerEmail: 'new-owner@example.test',
       createdAt: serverTimestamp(),
       schemaVersion: 1
