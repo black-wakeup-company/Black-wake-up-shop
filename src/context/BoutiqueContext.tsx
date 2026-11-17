@@ -1,5 +1,6 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { getScopedStorageKey } from '../utils/tenantStorage';
+import { mergeRestoredSettings } from '../utils/mergeRestoredSettings';
 import {
   Product,
   CartItem,
@@ -956,8 +957,8 @@ export const BoutiqueProvider: React.FC<{ children: React.ReactNode; storeId?: s
       if (parsed.cashiers && Array.isArray(parsed.cashiers)) {
         setCashiers(parsed.cashiers);
       }
-      if (parsed.settings) {
-        setSettings(parsed.settings);
+      if (parsed.settings && typeof parsed.settings === 'object' && !Array.isArray(parsed.settings)) {
+        setSettings((current) => mergeRestoredSettings(current, parsed.settings, isTenant));
       }
       if (parsed.cashSession) {
         setCashSession(parsed.cashSession);

@@ -47,6 +47,9 @@ jobs:
       - name: Google Drive backup scope tests
         run: npm run test:drive-backup-scope
 
+      - name: Restore settings safety tests
+        run: npm run test:restore-settings
+
       - name: Firestore rules emulator tests
         run: npm run test:rules
 

@@ -13,7 +13,8 @@
     "test:outbox": "node --import tsx --test tests/sync-outbox.test.mjs",
     "test:coordinator": "node --import tsx --test tests/sync-coordinator.test.mjs",
     "test:tenant-storage": "node --import tsx --test tests/tenant-storage.test.mjs",
-    "test:drive-backup-scope": "node --import tsx --test tests/drive-backup-scope.test.mjs"
+    "test:drive-backup-scope": "node --import tsx --test tests/drive-backup-scope.test.mjs",
+    "test:restore-settings": "node --import tsx --test tests/restore-settings.test.mjs"
   },
   "dependencies": {
     "@google/genai": "^2.4.0",
