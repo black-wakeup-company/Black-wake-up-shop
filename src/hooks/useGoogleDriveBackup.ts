@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { User } from 'firebase/auth';
+import { createScopedDriveBackup, extractScopedDriveBackup, getDriveBackupStorageKey } from '../utils/driveBackupScope';
 import {
   initAuth,
   googleSignIn,
@@ -16,19 +17,20 @@ import {
 export function useGoogleDriveBackup(
   getSnapshotData: () => string,
   onRestoreData: (jsonData: string) => boolean,
-  showToast: (msg: string, type?: 'success' | 'info' | 'warning' | 'error') => void
+  showToast: (msg: string, type?: 'success' | 'info' | 'warning' | 'error') => void,
+  storeId: string
 ) {
   const [currentUser, setCurrentUser] = useState<User | null>(null);
   const [isConnected, setIsConnected] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [backups, setBackups] = useState<DriveFileItem[]>([]);
   const [lastBackupTime, setLastBackupTime] = useState<string | null>(() => {
-    return localStorage.getItem('boutiquepro_last_drive_backup');
+    return localStorage.getItem(getDriveBackupStorageKey(storeId, 'last_backup'));
   });
 
   // Auto-backup toggle preference
   const [autoBackupEnabled, setAutoBackupEnabled] = useState<boolean>(() => {
-    return localStorage.getItem('boutiquepro_auto_backup_drive') === 'true';
+    return localStorage.getItem(getDriveBackupStorageKey(storeId, 'auto_backup')) === 'true';
   });
 
   // Track auth state
@@ -50,7 +52,7 @@ export function useGoogleDriveBackup(
     if (!isConnected) return;
     setIsLoading(true);
     try {
-      const items = await listDriveBackups();
+      const items = await listDriveBackups(storeId);
       setBackups(items);
     } catch (e: any) {
       console.warn('Erreur chargement sauvegardes:', e);
@@ -100,11 +102,11 @@ export function useGoogleDriveBackup(
 
     setIsLoading(true);
     try {
-      const data = getSnapshotData();
-      const res = await uploadBackupToDrive(data);
+      const data = createScopedDriveBackup(getSnapshotData(), storeId);
+      const res = await uploadBackupToDrive(data, undefined, storeId);
       const now = new Date().toISOString();
       setLastBackupTime(now);
-      localStorage.setItem('boutiquepro_last_drive_backup', now);
+      localStorage.setItem(getDriveBackupStorageKey(storeId, 'last_backup'), now);
       showToast(`Sauvegarde réussie dans Google Drive : ${res.fileName}`, 'success');
       await refreshBackupsList();
     } catch (e: any) {
@@ -124,7 +126,8 @@ export function useGoogleDriveBackup(
     setIsLoading(true);
     try {
       const jsonContent = await downloadDriveBackupContent(file.id);
-      const success = onRestoreData(jsonContent);
+      const restorePayload = extractScopedDriveBackup(jsonContent, storeId);
+      const success = onRestoreData(restorePayload);
       if (success) {
         showToast(`Données restaurées depuis "${file.name}" avec succès !`, 'success');
       }
@@ -137,7 +140,7 @@ export function useGoogleDriveBackup(
 
   const toggleAutoBackup = (enabled: boolean) => {
     setAutoBackupEnabled(enabled);
-    localStorage.setItem('boutiquepro_auto_backup_drive', enabled ? 'true' : 'false');
+    localStorage.setItem(getDriveBackupStorageKey(storeId, 'auto_backup'), enabled ? 'true' : 'false');
     showToast(
       enabled
         ? 'Sauvegarde automatique Google Drive activée (toutes les heures)'
@@ -154,8 +157,8 @@ export function useGoogleDriveBackup(
       try {
         const token = await getAccessToken();
         if (token) {
-          const data = getSnapshotData();
-          await uploadBackupToDrive(data);
+          const data = createScopedDriveBackup(getSnapshotData(), storeId);
+          await uploadBackupToDrive(data, undefined, storeId);
           const now = new Date().toISOString();
           setLastBackupTime(now);
           localStorage.setItem('boutiquepro_last_drive_backup', now);
@@ -167,7 +170,7 @@ export function useGoogleDriveBackup(
     }, 60 * 60 * 1000); // 1 hour
 
     return () => clearInterval(interval);
-  }, [autoBackupEnabled, isConnected, getSnapshotData]);
+  }, [autoBackupEnabled, isConnected, getSnapshotData, storeId]);
 
   return {
     currentUser,

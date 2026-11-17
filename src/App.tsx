@@ -205,7 +205,7 @@ function LegacyMigrationNotice({ onDismiss }: { onDismiss: () => void }) {
   );
 }
 
-function BoutiqueApp({ ownerEmail, onSignOut }: { ownerEmail: string | null; onSignOut: () => void }) {
+function BoutiqueApp({ ownerEmail, storeId, onSignOut }: { ownerEmail: string | null; storeId: string; onSignOut: () => void }) {
   const { workspaceMode, setWorkspaceMode, settings } = useBoutique();
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const [isAdminPinOpen, setIsAdminPinOpen] = useState(false);
@@ -250,7 +250,7 @@ function BoutiqueApp({ ownerEmail, onSignOut }: { ownerEmail: string | null; onS
       </footer>
       <AdminPinModal isOpen={isAdminPinOpen} onClose={() => setIsAdminPinOpen(false)} onSuccess={() => setIsAdminPinOpen(false)} />
       <SettingsModal isOpen={isSettingsOpen} onClose={() => setIsSettingsOpen(false)} />
-      <GoogleDriveBackupModal isOpen={isCloudSyncOpen} onClose={() => setIsCloudSyncOpen(false)} />
+      <GoogleDriveBackupModal isOpen={isCloudSyncOpen} onClose={() => setIsCloudSyncOpen(false)} storeId={storeId} />
       <ToastContainer />
       <LockScreen />
     </div>
@@ -319,7 +319,7 @@ function OwnerGate() {
   }
   return (
     <BoutiqueProvider key={gate.store.storeId} storeId={gate.store.storeId} initialSettings={{ boutiqueName: gate.store.name || 'Ma boutique', currencySymbol: gate.store.primaryCurrency || 'USD' }}>
-      <BoutiqueApp ownerEmail={gate.user.email} onSignOut={handleSignOut} />
+      <BoutiqueApp ownerEmail={gate.user.email} storeId={gate.store.storeId} onSignOut={handleSignOut} />
     </BoutiqueProvider>
   );
 }

@@ -6,6 +6,7 @@ export interface DriveFileItem {
   mimeType: string;
   modifiedTime: string;
   size?: string;
+  appProperties?: Record<string, string>;
 }
 
 const BACKUP_FOLDER_NAME = 'BoutiquePro_Sauvegardes';
@@ -57,13 +58,15 @@ export async function getOrCreateBackupFolder(accessToken: string): Promise<stri
  */
 export async function uploadBackupToDrive(
   jsonData: string,
-  customFileName?: string
+  customFileName?: string,
+  storeId?: string
 ): Promise<{ fileId: string; fileName: string }> {
   const token = await getAccessToken();
   if (!token) {
     throw new Error('Non connecté à Google Drive. Veuillez vous connecter d\'abord.');
   }
 
+  if (!storeId) throw new Error('Identifiant de boutique manquant pour la sauvegarde.');
   const folderId = await getOrCreateBackupFolder(token);
 
   const dateStr = new Date().toISOString().replace(/[:.]/g, '-').slice(0, 19);
@@ -73,7 +76,8 @@ export async function uploadBackupToDrive(
     name: fileName,
     parents: [folderId],
     mimeType: 'application/json',
-    description: 'Sauvegarde automatique BoutiquePro'
+    description: 'Sauvegarde automatique BoutiquePro',
+    appProperties: { blackWakeupStoreId: storeId, backupSchema: '1' }
   };
 
   const form = new FormData();
@@ -106,16 +110,17 @@ export async function uploadBackupToDrive(
 /**
  * Lists available backup files in the BoutiquePro folder or Drive
  */
-export async function listDriveBackups(): Promise<DriveFileItem[]> {
+export async function listDriveBackups(storeId: string): Promise<DriveFileItem[]> {
+  if (!storeId) return [];
   const token = await getAccessToken();
   if (!token) return [];
 
   try {
     const folderId = await getOrCreateBackupFolder(token);
-    const query = `'${folderId}' in parents and trashed = false`;
+    const query = `'${folderId}' in parents and trashed = false and appProperties has { key='blackWakeupStoreId' and value='${storeId}' }`;
     const url = `https://www.googleapis.com/drive/v3/files?q=${encodeURIComponent(
       query
-    )}&orderBy=modifiedTime desc&fields=files(id,name,mimeType,modifiedTime,size)&pageSize=20`;
+    )}&orderBy=modifiedTime desc&fields=files(id,name,mimeType,modifiedTime,size,appProperties)&pageSize=100`;
 
     const res = await fetch(url, {
       headers: { Authorization: `Bearer ${token}` }

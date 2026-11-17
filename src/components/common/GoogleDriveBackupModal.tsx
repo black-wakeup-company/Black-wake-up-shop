@@ -22,11 +22,13 @@ import {
 interface GoogleDriveBackupModalProps {
   isOpen: boolean;
   onClose: () => void;
+  storeId: string;
 }
 
 export const GoogleDriveBackupModal: React.FC<GoogleDriveBackupModalProps> = ({
   isOpen,
-  onClose
+  onClose,
+  storeId
 }) => {
   const {
     getDatabaseSnapshotJSON,
@@ -48,7 +50,7 @@ export const GoogleDriveBackupModal: React.FC<GoogleDriveBackupModalProps> = ({
     triggerRestore,
     toggleAutoBackup,
     refreshBackupsList
-  } = useGoogleDriveBackup(getDatabaseSnapshotJSON, importDatabaseJSON, showToast);
+  } = useGoogleDriveBackup(getDatabaseSnapshotJSON, importDatabaseJSON, showToast, storeId);
 
   const [activeTab, setActiveTab] = useState<'drive' | 'device_sync'>('drive');
 
