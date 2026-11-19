@@ -282,6 +282,45 @@ service cloud.firestore {
         allow delete: if hasRole(storeId, ['owner']);
       }
 
+      match /adminSecurity/{documentId} {
+        allow get: if isStoreOwner(storeId) && documentId == 'pin';
+        allow list: if false;
+        allow create: if isStoreOwner(storeId)
+          && documentId == 'pin'
+          && request.resource.data.keys().hasOnly([
+            'algorithm', 'iterations', 'salt', 'hash', 'updatedAt', 'updatedBy'
+          ])
+          && request.resource.data.keys().hasAll([
+            'algorithm', 'iterations', 'salt', 'hash', 'updatedAt', 'updatedBy'
+          ])
+          && request.resource.data.algorithm == 'PBKDF2-SHA-256'
+          && request.resource.data.iterations is int
+          && request.resource.data.iterations >= 100000
+          && request.resource.data.iterations <= 1000000
+          && request.resource.data.salt is string
+          && request.resource.data.salt.size() == 32
+          && request.resource.data.hash is string
+          && request.resource.data.hash.size() == 64
+          && request.resource.data.updatedAt == request.time
+          && request.resource.data.updatedBy == request.auth.uid;
+        allow update: if isStoreOwner(storeId)
+          && documentId == 'pin'
+          && request.resource.data.diff(resource.data).affectedKeys().hasOnly([
+            'algorithm', 'iterations', 'salt', 'hash', 'updatedAt', 'updatedBy'
+          ])
+          && request.resource.data.algorithm == 'PBKDF2-SHA-256'
+          && request.resource.data.iterations is int
+          && request.resource.data.iterations >= 100000
+          && request.resource.data.iterations <= 1000000
+          && request.resource.data.salt is string
+          && request.resource.data.salt.size() == 32
+          && request.resource.data.hash is string
+          && request.resource.data.hash.size() == 64
+          && request.resource.data.updatedAt == request.time
+          && request.resource.data.updatedBy == request.auth.uid;
+        allow delete: if false;
+      }
+
       match /settings/{documentId} {
         allow read: if isActiveMember(storeId) && documentId == 'main';
         allow create, update: if hasRole(storeId, ['owner']) && documentId == 'main';
