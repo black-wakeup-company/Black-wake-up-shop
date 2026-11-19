@@ -14,6 +14,7 @@ import { subscribeToOwnerAuth, signOutOwner } from './services/ownerAuth';
 import { getOwnerStore, saveOwnerStoreProfile, updateOwnerStoreName, OwnerStore } from './services/storeService';
 import { User } from 'firebase/auth';
 import { resetTenantLocalData } from './services/resetTenantLocalData';
+import { hasStoreAdminPin, saveStoreAdminPin } from './services/adminPinService';
 
 type GateState =
   | { status: 'checking' }
@@ -60,12 +61,22 @@ function OwnerSetupScreen({ user, existingStore, onSaved }: {
   const [name, setName] = useState(existingStore?.name || '');
   const [industry, setIndustry] = useState(existingStore?.industry || '');
   const [currency, setCurrency] = useState(existingStore?.primaryCurrency === 'CDF' ? 'CDF' : '');
+  const [adminPin, setAdminPin] = useState('');
+  const [confirmAdminPin, setConfirmAdminPin] = useState('');
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
 
   const submit = async (event: React.FormEvent) => {
     event.preventDefault();
     if (!name.trim() || !currency) return;
+    if (!/^\d{4}$/.test(adminPin)) {
+      setError('Le PIN administrateur doit contenir exactement 4 chiffres.');
+      return;
+    }
+    if (adminPin !== confirmAdminPin) {
+      setError('La confirmation du PIN ne correspond pas.');
+      return;
+    }
     setSaving(true);
     setError('');
     try {
@@ -74,6 +85,7 @@ function OwnerSetupScreen({ user, existingStore, onSaved }: {
         industry: industry.trim() || undefined,
         primaryCurrency: currency
       });
+      await saveStoreAdminPin(user, store.storeId, adminPin);
       onSaved(store);
     } catch (err) {
       console.error('Owner store setup failed:', err);
@@ -122,7 +134,16 @@ function OwnerSetupScreen({ user, existingStore, onSaved }: {
             <p className="mt-2 text-xs leading-5 text-slate-500">La caisse et les rapports utilisent actuellement le franc congolais (CDF/FC) comme devise de base. La prise en charge d’autres devises principales sera activée avec le moteur multidevise.</p>
           </div>
           {error && <p role="alert" className="rounded-xl border border-rose-400/20 bg-rose-400/10 p-3 text-sm text-rose-200">{error}</p>}
-          <button type="submit" disabled={saving || !name.trim() || !currency}
+          <div>
+            <label className="mb-2 block text-sm font-semibold">Créer le PIN administrateur (4 chiffres) *</label>
+            <input required type="password" inputMode="numeric" autoComplete="new-password" maxLength={4} pattern="[0-9]{4}" value={adminPin} onChange={e => setAdminPin(e.target.value.replace(/\D/g, '').slice(0, 4))} placeholder="Votre PIN à 4 chiffres" className="w-full rounded-xl border border-white/10 bg-slate-950 px-4 py-3 text-sm tracking-[0.5em] outline-none focus:border-emerald-400" />
+          </div>
+          <div>
+            <label className="mb-2 block text-sm font-semibold">Confirmer le PIN administrateur *</label>
+            <input required type="password" inputMode="numeric" autoComplete="new-password" maxLength={4} pattern="[0-9]{4}" value={confirmAdminPin} onChange={e => setConfirmAdminPin(e.target.value.replace(/\D/g, '').slice(0, 4))} placeholder="Répéter les 4 chiffres" className="w-full rounded-xl border border-white/10 bg-slate-950 px-4 py-3 text-sm tracking-[0.5em] outline-none focus:border-emerald-400" />
+          </div>
+          <p className="text-xs leading-5 text-slate-500">Ce PIN sera propre à votre boutique et synchronisé sur vos appareils. Ne choisissez pas un code facile à deviner.</p>
+          <button type="submit" disabled={saving || !name.trim() || !currency || adminPin.length !== 4 || confirmAdminPin.length !== 4}
             className="w-full rounded-xl bg-emerald-400 px-5 py-3.5 text-sm font-extrabold text-slate-950 transition hover:bg-emerald-300 disabled:cursor-wait disabled:opacity-60">
             {saving ? 'Enregistrement…' : 'Enregistrer et accéder à ma boutique'}
           </button>
@@ -298,9 +319,11 @@ function OwnerGate() {
         return;
       }
       setGate({ status: 'checking' });
-      getOwnerStore(user).then((store) => {
+      getOwnerStore(user).then(async (store) => {
         if (!active || eventVersion !== authEventVersion) return;
-        if (!store || !store.name || store.primaryCurrency !== 'CDF') {
+        const hasPin = store ? await hasStoreAdminPin(user, store.storeId) : false;
+        if (!active || eventVersion !== authEventVersion) return;
+        if (!store || !store.name || store.primaryCurrency !== 'CDF' || !hasPin) {
           setGate({ status: 'setup', user, store });
         } else {
           setGate({ status: 'ready', user, store });
