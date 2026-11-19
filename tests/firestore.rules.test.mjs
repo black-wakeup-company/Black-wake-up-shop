@@ -161,6 +161,29 @@ test('owner provisioning refuses either incomplete pre-existing state', async ()
   }));
 });
 
+test('admin PIN verifier is private to the boutique owner', async () => {
+  const ownerDb = dbFor(ownerUid);
+  const verifierRef = doc(ownerDb, 'stores', storeId, 'adminSecurity', 'pin');
+  const verifier = {
+    algorithm: 'PBKDF2-SHA-256',
+    iterations: 310000,
+    salt: 'a'.repeat(32),
+    hash: 'b'.repeat(64),
+    updatedAt: serverTimestamp(),
+    updatedBy: ownerUid
+  };
+
+  await assertSucceeds(setDoc(verifierRef, verifier));
+  await assertSucceeds(getDoc(verifierRef));
+
+  const managerDb = dbFor(managerUid);
+  const cashierDb = dbFor(cashierUid);
+  await assertFails(getDoc(doc(managerDb, 'stores', storeId, 'adminSecurity', 'pin')));
+  await assertFails(getDoc(doc(cashierDb, 'stores', storeId, 'adminSecurity', 'pin')));
+  await assertFails(setDoc(doc(managerDb, 'stores', storeId, 'adminSecurity', 'pin'), verifier));
+  await assertFails(getDoc(doc(ownerDb, 'stores', otherOwnerUid, 'adminSecurity', 'pin')));
+});
+
 test('settings documents are restricted to the main document', async () => {
   const ownerDb = dbFor(ownerUid);
   await assertFails(setDoc(doc(ownerDb, 'stores', storeId, 'settings', 'extra'), {
