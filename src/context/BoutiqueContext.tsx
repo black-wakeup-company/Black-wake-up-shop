@@ -991,7 +991,10 @@ export const BoutiqueProvider: React.FC<{ children: React.ReactNode; storeId?: s
         setCashiers(parsed.cashiers);
       }
       if (parsed.settings && typeof parsed.settings === 'object' && !Array.isArray(parsed.settings)) {
-        setSettings((current) => mergeRestoredSettings(current, parsed.settings, isTenant));
+        setSettings((current) => {
+          const restored = mergeRestoredSettings(current, parsed.settings, isTenant);
+          return isTenant ? { ...restored, adminPin: '' } : restored;
+        });
       }
       if (parsed.cashSession) {
         setCashSession(parsed.cashSession);
