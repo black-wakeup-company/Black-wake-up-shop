@@ -57,7 +57,7 @@ export const LockScreen: React.FC = () => {
 
       // Auto-submit if 4 digits entered and matches
       if (nextPin.length === 4) {
-        setTimeout(() => {
+        setTimeout(async () => {
           const success = await unlockScreen(nextPin);
           if (!success) {
             setHasError(true);
