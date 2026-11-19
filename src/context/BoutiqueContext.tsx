@@ -41,6 +41,7 @@ interface BoutiqueContextType {
   isScreenLocked: boolean;
   lockScreen: () => void;
   unlockScreen: (pin: string) => boolean;
+  unlockScreenAsOwner: () => void;
 
   // Currency & Taux du jour
   exchangeRateUSD: number;
@@ -219,6 +220,18 @@ export const BoutiqueProvider: React.FC<{ children: React.ReactNode; storeId?: s
       showToast('Code PIN incorrect. Veuillez réessayer.', 'error');
       return false;
     }
+  };
+
+  // This provider is mounted only after the verified Google owner passes OwnerGate.
+  // Allow that authenticated owner to recover a locked tenant workspace when no cashier PIN exists.
+  const unlockScreenAsOwner = () => {
+    setIsScreenLocked(false);
+    try {
+      localStorage.setItem(storageKey('WORKSPACE_MODE') + ':locked', 'false');
+    } catch (e) {
+      console.warn(e);
+    }
+    showToast('Caisse déverrouillée depuis votre session propriétaire Google.', 'success');
   };
 
   // Cashiers
@@ -999,6 +1012,7 @@ export const BoutiqueProvider: React.FC<{ children: React.ReactNode; storeId?: s
         isScreenLocked,
         lockScreen,
         unlockScreen,
+        unlockScreenAsOwner,
         exchangeRateUSD,
         updateExchangeRate,
         convertFCToUSD,
