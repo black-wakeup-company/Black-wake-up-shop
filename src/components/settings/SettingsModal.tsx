@@ -81,7 +81,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose, o
     setSaving(true);
     setSaveError('');
     if (newAdminPin || confirmAdminPin) {
-      if (!/^\\d{4}$/.test(newAdminPin)) {
+      if (!/^\d{4}$/.test(newAdminPin)) {
         setSaveError('Le PIN administrateur doit contenir exactement 4 chiffres.');
         return;
       }
@@ -310,7 +310,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose, o
                       maxLength={4}
                       pattern="[0-9]{4}"
                       value={newAdminPin}
-                      onChange={(e) => setNewAdminPin(e.target.value.replace(/\\D/g, '').slice(0, 4))}
+                      onChange={(e) => setNewAdminPin(e.target.value.replace(/\D/g, '').slice(0, 4))}
                       placeholder="4 chiffres"
                       className="w-full text-sm tracking-[0.5em] px-3 py-2 bg-white border border-emerald-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500"
                     />
@@ -324,7 +324,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose, o
                       maxLength={4}
                       pattern="[0-9]{4}"
                       value={confirmAdminPin}
-                      onChange={(e) => setConfirmAdminPin(e.target.value.replace(/\\D/g, '').slice(0, 4))}
+                      onChange={(e) => setConfirmAdminPin(e.target.value.replace(/\D/g, '').slice(0, 4))}
                       placeholder="Répéter les 4 chiffres"
                       className="w-full text-sm tracking-[0.5em] px-3 py-2 bg-white border border-emerald-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500"
                     />
