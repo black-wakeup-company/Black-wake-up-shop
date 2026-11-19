@@ -236,13 +236,9 @@ export const LockScreen: React.FC = () => {
           </button>
         </div>
 
-        {/* Quick hint for standard default PINs */}
-        <div className="text-center text-[11px] text-slate-500 pt-2 flex flex-col items-center gap-1">
-          <span>Saisissez le code PIN du caissier ou le code PIN administrateur.</span>
-          <span className="text-[10px] text-slate-600 font-mono">
-            (PIN caissier: {activeCashier.pin} · PIN admin: {settings.adminPin || '1234'})
-          </span>
-        </div>
+        <p className="text-center text-[11px] text-slate-500 pt-2">
+          Saisissez votre code PIN personnel pour déverrouiller la caisse.
+        </p>
       </div>
     </div>
   );
