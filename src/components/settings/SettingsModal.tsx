@@ -24,6 +24,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose, o
   const {
     settings,
     updateSettings,
+    setAdminPin,
     exportDatabaseJSON,
     importDatabaseJSON,
     resetAllData
@@ -83,10 +84,12 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose, o
     if (newAdminPin || confirmAdminPin) {
       if (!/^\d{4}$/.test(newAdminPin)) {
         setSaveError('Le PIN administrateur doit contenir exactement 4 chiffres.');
+        setSaving(false);
         return;
       }
       if (newAdminPin !== confirmAdminPin) {
         setSaveError('La confirmation du PIN ne correspond pas.');
+        setSaving(false);
         return;
       }
     }
@@ -94,6 +97,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose, o
       if (onUpdateStoreName && boutiqueName.trim() !== settings.boutiqueName) {
         await onUpdateStoreName(boutiqueName.trim());
       }
+      if (newAdminPin) await setAdminPin(newAdminPin);
       updateSettings({
       boutiqueName: boutiqueName.trim(),
       slogan: slogan.trim(),
@@ -104,7 +108,6 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose, o
       nifOrSiret: nifOrSiret.trim(),
       receiptFooterMessage: receiptFooterMessage.trim(),
       cashierName: cashierName.trim(),
-      ...(newAdminPin ? { adminPin: newAdminPin } : {}),
       currencySymbol: currencySymbol.trim() || 'FC',
       currencyPosition,
       exchangeRateUSD: Math.max(1, parseFloat(exchangeRateUSD) || 2850),
@@ -298,7 +301,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose, o
                   <div>
                     <h4 className="text-xs font-bold text-emerald-950">Sécurité administrateur</h4>
                     <p className="mt-1 text-[11px] text-emerald-800">
-                      Définissez un PIN personnel de 4 chiffres. Laissez les champs vides pour conserver le PIN actuel.
+                      Définissez le PIN partagé de cette boutique. Le nouveau code sera synchronisé sur les appareils du propriétaire.
                     </p>
                   </div>
                   <div>
