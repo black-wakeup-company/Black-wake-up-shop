@@ -6,6 +6,7 @@ export const LockScreen: React.FC = () => {
   const {
     isScreenLocked,
     unlockScreen,
+    unlockScreenAsOwner,
     settings,
     activeCashier,
     cashiers,
@@ -239,6 +240,19 @@ export const LockScreen: React.FC = () => {
         <p className="text-center text-[11px] text-slate-500 pt-2">
           Saisissez votre code PIN personnel pour déverrouiller la caisse.
         </p>
+
+        <button
+          type="button"
+          onClick={() => {
+            if (window.confirm('Votre compte Google propriétaire est connecté. Voulez-vous déverrouiller cette caisse en tant que propriétaire ?')) {
+              unlockScreenAsOwner();
+            }
+          }}
+          className="mt-2 inline-flex items-center justify-center gap-2 rounded-xl border border-emerald-500/40 bg-emerald-500/10 px-4 py-3 text-xs font-semibold text-emerald-300 transition-colors hover:bg-emerald-500/20"
+        >
+          <ShieldCheck className="h-4 w-4" />
+          Déverrouiller avec mon compte propriétaire
+        </button>
       </div>
     </div>
   );
