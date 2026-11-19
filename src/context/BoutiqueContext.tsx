@@ -208,11 +208,14 @@ export const BoutiqueProvider: React.FC<{ children: React.ReactNode; storeId?: s
   const unlockScreen = async (pin: string): Promise<boolean> => {
     const cleanPin = pin.trim();
     const cashierPin = activeCashier?.pin || (isTenant ? '' : '0000');
-    const adminPinValid = isTenant && storeId && auth.currentUser
-      ? await verifyStoreAdminPin(auth.currentUser, storeId, cleanPin).catch(() => false)
-      : !isTenant && cleanPin === (settings.adminPin || '1234');
+    const isCashierPin = Boolean(cashierPin && cleanPin === cashierPin);
+    const adminPinValid = isCashierPin
+      ? false
+      : isTenant && storeId && auth.currentUser
+        ? await verifyStoreAdminPin(auth.currentUser, storeId, cleanPin).catch(() => false)
+        : !isTenant && cleanPin === (settings.adminPin || '1234');
 
-    if ((cashierPin && cleanPin === cashierPin) || adminPinValid || (!isTenant && cleanPin === '0000')) {
+    if (isCashierPin || adminPinValid || (!isTenant && cleanPin === '0000')) {
       setIsScreenLocked(false);
       try {
         localStorage.setItem(storageKey('WORKSPACE_MODE') + ':locked', 'false');
