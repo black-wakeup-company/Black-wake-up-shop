@@ -49,7 +49,7 @@ const removeTenantOutboxItems = async (storeId: string): Promise<number> => {
       let removed = 0;
       const transaction = database.transaction(OUTBOX_STORE, 'readwrite');
       const index = transaction.objectStore(OUTBOX_STORE).index('by-store-created');
-      const range = IDBKeyRange.bound([storeId, ''], [storeId, '\\uffff']);
+      const range = IDBKeyRange.bound([storeId, ''], [storeId, '\uffff']);
       const request = index.openCursor(range);
 
       request.onsuccess = () => {
