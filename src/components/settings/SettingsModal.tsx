@@ -40,6 +40,8 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose, o
   const [nifOrSiret, setNifOrSiret] = useState(settings.nifOrSiret);
   const [receiptFooterMessage, setReceiptFooterMessage] = useState(settings.receiptFooterMessage);
   const [cashierName, setCashierName] = useState(settings.cashierName);
+  const [newAdminPin, setNewAdminPin] = useState('');
+  const [confirmAdminPin, setConfirmAdminPin] = useState('');
 
   const [currencySymbol, setCurrencySymbol] = useState(settings.currencySymbol || 'FC');
   const [currencyPosition, setCurrencyPosition] = useState<'before' | 'after'>(settings.currencyPosition);
@@ -62,6 +64,8 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose, o
     setNifOrSiret(settings.nifOrSiret);
     setReceiptFooterMessage(settings.receiptFooterMessage);
     setCashierName(settings.cashierName);
+    setNewAdminPin('');
+    setConfirmAdminPin('');
     setCurrencySymbol(settings.currencySymbol || 'FC');
     setCurrencyPosition(settings.currencyPosition);
     setExchangeRateUSD((settings.exchangeRateUSD || 2850).toString());
@@ -76,6 +80,16 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose, o
     e.preventDefault();
     setSaving(true);
     setSaveError('');
+    if (newAdminPin || confirmAdminPin) {
+      if (!/^\\d{4}$/.test(newAdminPin)) {
+        setSaveError('Le PIN administrateur doit contenir exactement 4 chiffres.');
+        return;
+      }
+      if (newAdminPin !== confirmAdminPin) {
+        setSaveError('La confirmation du PIN ne correspond pas.');
+        return;
+      }
+    }
     try {
       if (onUpdateStoreName && boutiqueName.trim() !== settings.boutiqueName) {
         await onUpdateStoreName(boutiqueName.trim());
@@ -90,6 +104,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose, o
       nifOrSiret: nifOrSiret.trim(),
       receiptFooterMessage: receiptFooterMessage.trim(),
       cashierName: cashierName.trim(),
+      ...(newAdminPin ? { adminPin: newAdminPin } : {}),
       currencySymbol: currencySymbol.trim() || 'FC',
       currencyPosition,
       exchangeRateUSD: Math.max(1, parseFloat(exchangeRateUSD) || 2850),
@@ -275,6 +290,43 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose, o
                       value={cashierName}
                       onChange={(e) => setCashierName(e.target.value)}
                       className="w-full text-xs px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:ring-1 focus:ring-slate-900"
+                    />
+                  </div>
+                </div>
+
+                <div className="rounded-xl border border-emerald-200 bg-emerald-50 p-4 space-y-3">
+                  <div>
+                    <h4 className="text-xs font-bold text-emerald-950">Sécurité administrateur</h4>
+                    <p className="mt-1 text-[11px] text-emerald-800">
+                      Définissez un PIN personnel de 4 chiffres. Laissez les champs vides pour conserver le PIN actuel.
+                    </p>
+                  </div>
+                  <div>
+                    <label className="block text-xs font-semibold text-slate-700 mb-1">Nouveau PIN administrateur</label>
+                    <input
+                      type="password"
+                      inputMode="numeric"
+                      autoComplete="new-password"
+                      maxLength={4}
+                      pattern="[0-9]{4}"
+                      value={newAdminPin}
+                      onChange={(e) => setNewAdminPin(e.target.value.replace(/\\D/g, '').slice(0, 4))}
+                      placeholder="4 chiffres"
+                      className="w-full text-sm tracking-[0.5em] px-3 py-2 bg-white border border-emerald-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-semibold text-slate-700 mb-1">Confirmer le nouveau PIN</label>
+                    <input
+                      type="password"
+                      inputMode="numeric"
+                      autoComplete="new-password"
+                      maxLength={4}
+                      pattern="[0-9]{4}"
+                      value={confirmAdminPin}
+                      onChange={(e) => setConfirmAdminPin(e.target.value.replace(/\\D/g, '').slice(0, 4))}
+                      placeholder="Répéter les 4 chiffres"
+                      className="w-full text-sm tracking-[0.5em] px-3 py-2 bg-white border border-emerald-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500"
                     />
                   </div>
                 </div>
