@@ -49,7 +49,7 @@ export const LockScreen: React.FC = () => {
 
   if (!isScreenLocked) return null;
 
-  const handleDigit = (digit: string) => {
+  const handleDigit = async (digit: string) => {
     if (pin.length < 8) {
       const nextPin = pin + digit;
       setPin(nextPin);
@@ -58,7 +58,7 @@ export const LockScreen: React.FC = () => {
       // Auto-submit if 4 digits entered and matches
       if (nextPin.length === 4) {
         setTimeout(() => {
-          const success = unlockScreen(nextPin);
+          const success = await unlockScreen(nextPin);
           if (!success) {
             setHasError(true);
             setTimeout(() => setPin(''), 600);
@@ -78,9 +78,9 @@ export const LockScreen: React.FC = () => {
     setHasError(false);
   };
 
-  const handleSubmit = () => {
+  const handleSubmit = async () => {
     if (!pin) return;
-    const success = unlockScreen(pin);
+    const success = await unlockScreen(pin);
     if (!success) {
       setHasError(true);
       setTimeout(() => setPin(''), 600);
