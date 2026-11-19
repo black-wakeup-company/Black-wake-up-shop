@@ -9,20 +9,20 @@ interface AdminPinModalProps {
 }
 
 export const AdminPinModal: React.FC<AdminPinModalProps> = ({ isOpen, onClose, onSuccess }) => {
-  const { unlockAdmin, settings } = useBoutique();
+  const { unlockAdmin } = useBoutique();
   const [pin, setPin] = useState('');
   const [error, setError] = useState(false);
 
   if (!isOpen) return null;
 
-  const handleDigit = (d: string) => {
+  const handleDigit = async (d: string) => {
     if (pin.length < 6) {
       const nextPin = pin + d;
       setPin(nextPin);
       setError(false);
       // Auto submit if length 4
       if (nextPin.length === 4) {
-        if (unlockAdmin(nextPin)) {
+        if (await unlockAdmin(nextPin)) {
           setPin('');
           onSuccess();
         } else {
@@ -43,9 +43,9 @@ export const AdminPinModal: React.FC<AdminPinModalProps> = ({ isOpen, onClose, o
     setError(false);
   };
 
-  const handleSubmit = (e?: React.FormEvent) => {
+  const handleSubmit = async (e?: React.FormEvent) => {
     if (e) e.preventDefault();
-    if (unlockAdmin(pin)) {
+    if (await unlockAdmin(pin)) {
       setPin('');
       onSuccess();
     } else {
