@@ -13,6 +13,7 @@ import { OwnerLoginScreen } from './components/auth/OwnerLoginScreen';
 import { subscribeToOwnerAuth, signOutOwner } from './services/ownerAuth';
 import { getOwnerStore, saveOwnerStoreProfile, updateOwnerStoreName, OwnerStore } from './services/storeService';
 import { User } from 'firebase/auth';
+import { resetTenantLocalData } from './services/resetTenantLocalData';
 
 type GateState =
   | { status: 'checking' }
@@ -211,14 +212,36 @@ function BoutiqueApp({ ownerEmail, storeId, onSignOut, onUpdateStoreName }: { ow
   const [isAdminPinOpen, setIsAdminPinOpen] = useState(false);
   const [isCloudSyncOpen, setIsCloudSyncOpen] = useState(false);
   const [showLegacyMigration, setShowLegacyMigration] = useState(true);
+  const [localResetStatus, setLocalResetStatus] = useState('');
+  const [isLocalResetting, setIsLocalResetting] = useState(false);
+
+  const handleLocalReset = async () => {
+    const confirmed = window.confirm('Cette action supprimera uniquement les données locales et les opérations en attente de synchronisation de cette boutique sur cet appareil. Les documents Firestore et le compte Google ne seront pas supprimés. Continuer ?');
+    if (!confirmed) return;
+    setIsLocalResetting(true);
+    setLocalResetStatus('');
+    try {
+      const result = await resetTenantLocalData(storeId);
+      setLocalResetStatus(`Nettoyage local terminé : ${result.localStorageKeysRemoved} clé(s) locale(s) et ${result.pendingSyncItemsRemoved} opération(s) en attente supprimée(s). Les données Firestore sont intactes.`);
+    } catch (error) {
+      console.error('Tenant local reset failed:', error);
+      setLocalResetStatus(error instanceof Error ? error.message : 'Le nettoyage local a échoué.');
+    } finally {
+      setIsLocalResetting(false);
+    }
+  };
 
   return (
     <div className="min-h-screen bg-slate-50 flex flex-col text-slate-900 selection:bg-slate-900 selection:text-white">
       {showLegacyMigration && <LegacyMigrationNotice onDismiss={() => setShowLegacyMigration(false)} />}
       <div className="flex items-center justify-between gap-3 bg-slate-900 px-4 py-2 text-xs text-white">
         <span className="truncate text-slate-300">Espace propriétaire · {ownerEmail || 'Compte Google connecté'}</span>
-        <button onClick={onSignOut} className="shrink-0 rounded-lg border border-white/20 px-3 py-1.5 font-semibold hover:bg-white/10">Déconnexion</button>
+        <div className="flex shrink-0 items-center gap-2">
+          <button onClick={() => void handleLocalReset()} disabled={isLocalResetting} className="rounded-lg border border-amber-300/40 px-3 py-1.5 font-semibold text-amber-200 hover:bg-white/10 disabled:opacity-50">{isLocalResetting ? 'Nettoyage…' : 'Réinitialiser les données locales'}</button>
+          <button onClick={onSignOut} className="rounded-lg border border-white/20 px-3 py-1.5 font-semibold hover:bg-white/10">Déconnexion</button>
+        </div>
       </div>
+      {localResetStatus && <div role="status" className="mx-auto w-full max-w-7xl bg-amber-50 px-4 py-3 text-sm text-amber-950">{localResetStatus}</div>}
       <Header
         onOpenSettings={() => setIsSettingsOpen(true)}
         onOpenAdminAuth={() => setIsAdminPinOpen(true)}
