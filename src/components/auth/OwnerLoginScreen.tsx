@@ -34,7 +34,12 @@ export const OwnerLoginScreen: React.FC<OwnerLoginScreenProps> = ({ onAuthentica
       });
     } catch (error) {
       console.error('Owner sign-in failed:', error);
-      setErrorMessage('La connexion n’a pas abouti. Vérifiez votre connexion Internet puis réessayez.');
+      const firebaseError = error as { code?: unknown; message?: unknown };
+      const errorCode = typeof firebaseError?.code === 'string' ? firebaseError.code : 'unknown';
+      const errorDetail = typeof firebaseError?.message === 'string'
+        ? firebaseError.message
+        : 'Aucun détail technique fourni.';
+      setErrorMessage(`Erreur de connexion (${errorCode}) : ${errorDetail}`);
     } finally {
       setIsLoading(false);
     }
