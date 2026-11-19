@@ -2,6 +2,8 @@ import React, { createContext, useContext, useState, useEffect } from 'react';
 import { getScopedStorageKey } from '../utils/tenantStorage';
 import { mergeRestoredSettings } from '../utils/mergeRestoredSettings';
 import { mergeTenantSettings } from '../utils/mergeTenantSettings';
+import { verifyStoreAdminPin, saveStoreAdminPin } from '../services/adminPinService';
+import { auth } from '../services/firebase';
 import {
   Product,
   CartItem,
@@ -34,13 +36,14 @@ interface BoutiqueContextType {
   workspaceMode: WorkspaceMode;
   setWorkspaceMode: (mode: WorkspaceMode) => void;
   isAdminUnlocked: boolean;
-  unlockAdmin: (pin: string) => boolean;
+  unlockAdmin: (pin: string) => Promise<boolean>;
+  setAdminPin: (pin: string) => Promise<void>;
   lockAdmin: () => void;
 
   // Screen Lock (Code de verrouillage)
   isScreenLocked: boolean;
   lockScreen: () => void;
-  unlockScreen: (pin: string) => boolean;
+  unlockScreen: (pin: string) => Promise<boolean>;
   unlockScreenAsOwner: () => void;
 
   // Currency & Taux du jour
@@ -202,19 +205,21 @@ export const BoutiqueProvider: React.FC<{ children: React.ReactNode; storeId?: s
     showToast('Écran de caisse verrouillé', 'info');
   };
 
-  const unlockScreen = (pin: string): boolean => {
+  const unlockScreen = async (pin: string): Promise<boolean> => {
     const cleanPin = pin.trim();
     const cashierPin = activeCashier?.pin || (isTenant ? '' : '0000');
-    const adminPin = settings.adminPin || (isTenant ? '' : '1234');
+    const adminPinValid = isTenant && storeId && auth.currentUser
+      ? await verifyStoreAdminPin(auth.currentUser, storeId, cleanPin).catch(() => false)
+      : !isTenant && cleanPin === (settings.adminPin || '1234');
 
-    if ((cashierPin && cleanPin === cashierPin) || (adminPin && cleanPin === adminPin) || (!isTenant && (cleanPin === '1234' || cleanPin === '0000'))) {
+    if ((cashierPin && cleanPin === cashierPin) || adminPinValid || (!isTenant && cleanPin === '0000')) {
       setIsScreenLocked(false);
       try {
         localStorage.setItem(storageKey('WORKSPACE_MODE') + ':locked', 'false');
       } catch (e) {
         console.warn(e);
       }
-      showToast(`Déverrouillé (${cleanPin === adminPin ? 'Mode Administrateur' : activeCashier.name})`, 'success');
+      showToast(`Déverrouillé (${adminPinValid ? 'Mode Administrateur' : activeCashier.name})`, 'success');
       return true;
     } else {
       showToast('Code PIN incorrect. Veuillez réessayer.', 'error');
@@ -305,7 +310,9 @@ export const BoutiqueProvider: React.FC<{ children: React.ReactNode; storeId?: s
     const baseSettings = { ...(isTenant ? createEmptySettings() : DEFAULT_SETTINGS), ...(initialSettings || {}) };
     try {
       const saved = localStorage.getItem(storageKey('SETTINGS'));
-      return saved ? mergeTenantSettings(baseSettings, JSON.parse(saved), isTenant) : baseSettings;
+      if (!saved) return baseSettings;
+      const restored = mergeTenantSettings(baseSettings, JSON.parse(saved), isTenant);
+      return isTenant ? { ...restored, adminPin: '' } : restored;
     } catch {
       return baseSettings;
     }
@@ -430,9 +437,11 @@ export const BoutiqueProvider: React.FC<{ children: React.ReactNode; storeId?: s
     setWorkspaceModeState(mode);
   };
 
-  const unlockAdmin = (pin: string): boolean => {
-    const validPin = settings.adminPin || (isTenant ? '' : '1234');
-    if (validPin && pin.trim() === validPin) {
+  const unlockAdmin = async (pin: string): Promise<boolean> => {
+    const validPin = isTenant && storeId && auth.currentUser
+      ? await verifyStoreAdminPin(auth.currentUser, storeId, pin.trim()).catch(() => false)
+      : !isTenant && pin.trim() === (settings.adminPin || '1234');
+    if (validPin) {
       setIsAdminUnlocked(true);
       setWorkspaceModeState('admin');
       showToast('Espace Administration déverrouillé avec succès', 'success');
@@ -906,8 +915,18 @@ export const BoutiqueProvider: React.FC<{ children: React.ReactNode; storeId?: s
 
   // Settings
   const updateSettings = (newSettings: Partial<BoutiqueSettings>) => {
-    setSettings((prev) => ({ ...prev, ...newSettings }));
+    const safeSettings = isTenant ? { ...newSettings, adminPin: '' } : newSettings;
+    setSettings((prev) => ({ ...prev, ...safeSettings }));
     showToast('Paramètres de la boutique enregistrés', 'success');
+  };
+
+  const setAdminPin = async (pin: string): Promise<void> => {
+    if (!isTenant || !storeId || !auth.currentUser) {
+      throw new Error('Le PIN synchronisé est disponible uniquement pour une boutique connectée.');
+    }
+    await saveStoreAdminPin(auth.currentUser, storeId, pin);
+    setSettings((prev) => ({ ...prev, adminPin: '' }));
+    showToast('PIN administrateur de la boutique mis à jour sur le cloud.', 'success');
   };
 
   const formatMoney = (amount: number, currencyOverride?: 'FC' | 'USD'): string => {
@@ -1008,6 +1027,7 @@ export const BoutiqueProvider: React.FC<{ children: React.ReactNode; storeId?: s
         setWorkspaceMode,
         isAdminUnlocked,
         unlockAdmin,
+        setAdminPin,
         lockAdmin,
         isScreenLocked,
         lockScreen,
