@@ -133,9 +133,7 @@ export const AdminPinModal: React.FC<AdminPinModalProps> = ({ isOpen, onClose, o
           </button>
         </div>
 
-        <div className="mt-5 pt-3 border-t border-slate-100 text-[11px] text-slate-400">
-          Code PIN par défaut : <span className="font-mono font-semibold text-slate-600">1234</span>
-        </div>
+
       </div>
     </div>
   );
