@@ -1,3 +1,4 @@
+
 export interface AdminPinVerifier {
   algorithm: 'PBKDF2-SHA-256';
   iterations: number;
@@ -27,11 +28,14 @@ const derivePinHash = async (pin: string, salt: Uint8Array, iterations: number):
     false,
     ['deriveBits']
   );
-  const bits = await crypto.subtle.deriveBits(
-    { name: 'PBKDF2', hash: 'SHA-256', salt, iterations },
-    material,
-    HASH_BITS
-  );
+  const saltBuffer = new ArrayBuffer(salt.byteLength);
+new Uint8Array(saltBuffer).set(salt);
+
+const bits = await crypto.subtle.deriveBits(
+  { name: 'PBKDF2', hash: 'SHA-256', salt: saltBuffer, iterations },
+  material,
+  HASH_BITS
+);
   return new Uint8Array(bits);
 };
 
