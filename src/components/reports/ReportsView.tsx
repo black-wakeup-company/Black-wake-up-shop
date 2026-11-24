@@ -235,9 +235,27 @@ RÉPARTITION PAR MODE DE RÈGLEMENT :
   };
 
   return (
-    <div className="bp-view max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 space-y-6">
+    <div className="bp-view max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-7 space-y-7">
+      {/* Reports workspace heading */}
+      <div className="relative overflow-hidden rounded-3xl bg-slate-950 px-6 py-7 sm:px-8 text-white shadow-xl">
+        <div className="pointer-events-none absolute -right-16 -top-24 h-64 w-64 rounded-full bg-emerald-500/20 blur-3xl" />
+        <div className="pointer-events-none absolute right-1/4 -bottom-24 h-48 w-48 rounded-full bg-cyan-500/10 blur-3xl" />
+        <div className="relative flex flex-col gap-5 sm:flex-row sm:items-end sm:justify-between">
+          <div>
+            <div className="mb-3 inline-flex items-center gap-2 rounded-full border border-emerald-400/20 bg-emerald-400/10 px-3 py-1 text-[10px] font-bold uppercase tracking-[0.18em] text-emerald-300">
+              <TrendingUp className="h-3.5 w-3.5" /> Pilotage & performance
+            </div>
+            <h2 className="text-2xl font-black tracking-tight sm:text-3xl">Rapports & finances</h2>
+            <p className="mt-2 max-w-xl text-sm text-slate-300">Suivez les résultats de votre boutique, analysez les encaissements et contrôlez votre trésorerie.</p>
+          </div>
+          <div className="flex items-center gap-2 text-xs text-slate-300">
+            <Calendar className="h-4 w-4 text-emerald-300" />
+            <span>Mis à jour à partir des données enregistrées</span>
+          </div>
+        </div>
+      </div>
       {/* Timeframe Selector & Export */}
-      <div className="flex flex-col sm:flex-row items-center justify-between gap-4 bg-white p-4 rounded-xl border border-slate-200">
+      <div className="flex flex-col sm:flex-row items-center justify-between gap-4 bg-white p-5 rounded-2xl border border-slate-200 shadow-sm">
         <div className="flex items-center gap-2">
           <Calendar className="w-4 h-4 text-slate-500" />
           <span className="text-xs font-semibold text-slate-700">Période du bilan :</span>
@@ -272,7 +290,7 @@ RÉPARTITION PAR MODE DE RÈGLEMENT :
       </div>
 
       {/* 5-Metric Financial Strip */}
-      <div className="grid grid-cols-2 md:grid-cols-5 gap-3.5">
+      <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-5 gap-4">
         <div className="bg-white p-4 rounded-xl border border-slate-200">
           <span className="text-xs font-medium text-slate-500">Chiffre d'Affaires</span>
           <div className="text-2xl font-bold text-slate-900 mt-1 tabular-nums font-mono">
@@ -313,7 +331,7 @@ RÉPARTITION PAR MODE DE RÈGLEMENT :
           </span>
         </div>
 
-        <div className="bg-slate-900 text-white p-4 rounded-xl border border-slate-800 col-span-2 md:col-span-1 shadow-sm">
+        <div className="bg-gradient-to-br from-slate-950 via-slate-900 to-emerald-950 text-white p-5 rounded-2xl border border-slate-800 col-span-1 sm:col-span-2 xl:col-span-1 shadow-lg">
           <span className="text-xs font-medium text-slate-300">Bénéfice Net Réel</span>
           <div className={`text-2xl font-bold mt-1 tabular-nums font-mono ${
             financial.netProfit >= 0 ? 'text-emerald-400' : 'text-rose-400'
@@ -327,7 +345,7 @@ RÉPARTITION PAR MODE DE RÈGLEMENT :
       </div>
 
       {/* Cash Register Box & Session Monitoring */}
-      <div className="bg-white p-5 rounded-xl border border-slate-200 flex flex-col md:flex-row items-center justify-between gap-4">
+      <div className="bg-white p-5 sm:p-6 rounded-2xl border border-slate-200 shadow-sm flex flex-col md:flex-row items-center justify-between gap-4">
         <div className="flex items-center gap-3">
           <div className="w-10 h-10 rounded-xl bg-emerald-50 text-emerald-700 flex items-center justify-center">
             <Wallet className="w-5 h-5" />
@@ -376,7 +394,7 @@ RÉPARTITION PAR MODE DE RÈGLEMENT :
       {/* Grid: 7-Day Chart + Payment Breakdown */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
         {/* Clean SVG Bar Chart: Ventes des 7 derniers jours */}
-        <div className="lg:col-span-8 bg-white p-5 rounded-xl border border-slate-200 space-y-4">
+        <div className="lg:col-span-8 bg-white p-5 sm:p-6 rounded-2xl border border-slate-200 shadow-sm space-y-4">
           <div className="flex items-center justify-between">
             <div>
               <h3 className="font-bold text-sm text-slate-900">Évolution Quotidienne du CA (7 Derniers Jours)</h3>
@@ -457,7 +475,7 @@ RÉPARTITION PAR MODE DE RÈGLEMENT :
       {/* Grid: Top 5 Articles + Category Distribution */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         {/* Top 5 Best Sellers */}
-        <div className="bg-white p-5 rounded-xl border border-slate-200 space-y-3">
+        <div className="bg-white p-5 sm:p-6 rounded-2xl border border-slate-200 shadow-sm space-y-3">
           <h3 className="font-bold text-sm text-slate-900">Articles les Plus Vendus</h3>
           <div className="divide-y divide-slate-100">
             {topProducts.map((prod, idx) => (
@@ -510,7 +528,7 @@ RÉPARTITION PAR MODE DE RÈGLEMENT :
       {/* CLOSE CASH SESSION MODAL */}
       {isCashSessionModalOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm">
-          <div className="relative w-full max-w-sm bg-white rounded-2xl shadow-2xl p-6 border border-slate-200 space-y-4">
+          <div className="relative w-full max-w-sm bg-white rounded-3xl shadow-2xl p-6 border border-slate-200 space-y-4">
             <div className="border-b border-slate-100 pb-3">
               <h3 className="font-bold text-sm text-slate-900">Clôture de Caisse Journalière</h3>
               <p className="text-xs text-slate-500">Comptage physique des espèces dans le tiroir</p>
