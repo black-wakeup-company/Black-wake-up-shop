@@ -230,7 +230,14 @@ export const PosView: React.FC = () => {
         {/* LEFT COLUMN: Catalog & Fast Search */}
         <div className="lg:col-span-7 xl:col-span-8 space-y-4">
           {/* Search bar & Category filter */}
-          <div className="bp-panel p-4 sm:p-5 space-y-3">
+          <div className="bp-panel rounded-2xl border border-slate-200 bg-white p-4 sm:p-5 shadow-sm space-y-4">
+            <div className="flex items-center justify-between gap-3">
+              <div>
+                <h3 className="text-sm font-bold text-slate-900">Catalogue des articles</h3>
+                <p className="mt-0.5 text-[11px] text-slate-500">Recherchez un produit ou sélectionnez une catégorie</p>
+              </div>
+              <span className="shrink-0 rounded-full bg-slate-100 px-3 py-1 text-[10px] font-semibold tabular-nums text-slate-600">{filteredProducts.length} article{filteredProducts.length > 1 ? 's' : ''}</span>
+            </div>
             <div className="flex items-center gap-2">
               <form onSubmit={handleBarcodeSubmit} className="flex-1 flex items-center gap-2">
                 <div className="relative flex-1">
@@ -281,7 +288,9 @@ export const PosView: React.FC = () => {
             </div>
 
             {/* Category Segmented Controls */}
-            <div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar py-1">
+            <div className="space-y-2">
+              <div className="text-[10px] font-bold uppercase tracking-[0.12em] text-slate-400">Filtrer par catégorie</div>
+              <div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar py-1">
               {categories.map((cat) => {
                 const isSelected = selectedCategory === cat;
                 return (
@@ -298,6 +307,7 @@ export const PosView: React.FC = () => {
                   </button>
                 );
               })}
+              </div>
             </div>
           </div>
 
