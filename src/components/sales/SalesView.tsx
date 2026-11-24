@@ -134,10 +134,28 @@ export const SalesView: React.FC = () => {
   };
 
   return (
-    <div className="bp-view max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 space-y-6">
+    <div className="bp-view max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-7 space-y-7">
+      {/* Sales workspace heading */}
+      <div className="relative overflow-hidden rounded-3xl bg-slate-950 px-6 py-7 sm:px-8 text-white shadow-xl">
+        <div className="pointer-events-none absolute -right-16 -top-24 h-64 w-64 rounded-full bg-emerald-500/20 blur-3xl" />
+        <div className="pointer-events-none absolute right-1/4 -bottom-24 h-48 w-48 rounded-full bg-cyan-500/10 blur-3xl" />
+        <div className="relative flex flex-col gap-5 sm:flex-row sm:items-end sm:justify-between">
+          <div>
+            <div className="mb-3 inline-flex items-center gap-2 rounded-full border border-emerald-400/20 bg-emerald-400/10 px-3 py-1 text-[10px] font-bold uppercase tracking-[0.18em] text-emerald-300">
+              <Receipt className="h-3.5 w-3.5" /> Transactions & encaissements
+            </div>
+            <h2 className="text-2xl font-black tracking-tight sm:text-3xl">Journal des ventes</h2>
+            <p className="mt-2 max-w-xl text-sm text-slate-300">Consultez vos transactions, suivez les paiements et retrouvez rapidement chaque ticket de caisse.</p>
+          </div>
+          <div className="flex items-center gap-2 text-xs text-slate-300">
+            <CheckCircle2 className="h-4 w-4 text-emerald-300" />
+            <span>{metrics.salesCount} ventes encaissées sur la sélection</span>
+          </div>
+        </div>
+      </div>
       {/* KPI Cards */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-        <div className="bg-white p-4 rounded-xl border border-slate-200">
+      <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">
+        <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm">
           <span className="text-xs font-medium text-slate-500">Chiffre d'Affaires</span>
           <div className="text-2xl font-bold text-slate-900 mt-1 tabular-nums">
             {formatMoney(metrics.totalAmount)}
@@ -179,7 +197,7 @@ export const SalesView: React.FC = () => {
       </div>
 
       {/* Filter and Search Bar */}
-      <div className="bg-white p-4 rounded-xl border border-slate-200 flex flex-col md:flex-row gap-4 items-center justify-between">
+      <div className="bg-white p-4 sm:p-5 rounded-2xl border border-slate-200 shadow-sm flex flex-col md:flex-row gap-4 items-center justify-between">
         <div className="flex flex-1 flex-col sm:flex-row gap-3 w-full md:w-auto items-center">
           <div className="relative w-full sm:w-72">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
@@ -252,7 +270,7 @@ export const SalesView: React.FC = () => {
       </div>
 
       {/* Transactions Table */}
-      <div className="bg-white rounded-xl border border-slate-200 overflow-hidden shadow-xs">
+      <div className="bg-white rounded-2xl border border-slate-200 overflow-hidden shadow-sm">
         <div className="overflow-x-auto">
           <table className="w-full text-left text-xs">
             <thead className="bg-slate-50 border-b border-slate-200 text-slate-500 font-semibold uppercase tracking-wider text-[10px]">
@@ -374,7 +392,7 @@ export const SalesView: React.FC = () => {
       {/* TICKET INSPECTION MODAL */}
       {inspectSale && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm">
-          <div className="relative w-full max-w-lg bg-white rounded-2xl shadow-2xl p-6 border border-slate-200 space-y-4">
+          <div className="relative w-full max-w-lg bg-white rounded-3xl shadow-2xl p-6 border border-slate-200 space-y-4">
             <div className="flex items-center justify-between border-b border-slate-100 pb-3">
               <div>
                 <h3 className="font-bold text-base text-slate-900">Détails de la Vente {inspectSale.id}</h3>
