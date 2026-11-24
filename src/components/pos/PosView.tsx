@@ -301,86 +301,57 @@ export const PosView: React.FC = () => {
             </div>
           </div>
 
-          {/* Product Grid */}
-          <div className="grid grid-cols-2 sm:grid-cols-3 xl:grid-cols-4 gap-3.5">
-            {filteredProducts.map((product) => {
-              const inStock = product.stockQuantity > 0;
-              const isLowStock = product.stockQuantity > 0 && product.stockQuantity <= product.minStockThreshold;
-
-              return (
-                <div
-                  key={product.id}
-                  onClick={() => addToCart(product, 1)}
-                  className={`group relative bg-white border rounded-2xl overflow-hidden cursor-pointer transition-all duration-200 hover:-translate-y-0.5 hover:shadow-xl hover:shadow-emerald-950/10 flex flex-col justify-between ${
-                    inStock
-                      ? 'border-slate-200 hover:border-emerald-400'
-                      : 'border-slate-200 opacity-60 bg-slate-50'
-                  }`}
-                >
-                  {/* Image container */}
-                  <div className="relative aspect-4/3 w-full bg-gradient-to-br from-emerald-50 to-slate-100 overflow-hidden">
-                    {product.image ? (
-                      <img
-                        src={product.image}
-                        alt={product.name}
-                        referrerPolicy="no-referrer"
-                        className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
-                      />
-                    ) : (
-                      <div className="w-full h-full flex flex-col items-center justify-center text-slate-400">
-                        <Package className="w-8 h-8 stroke-1 text-slate-400" />
-                        <span className="text-[10px] mt-1 text-slate-400 uppercase tracking-wider">{product.category}</span>
-                      </div>
-                    )}
-
-                    {/* Stock alert pill */}
-                    <div className="absolute top-2 right-2">
-                      {!inStock ? (
-                        <span className="px-2 py-0.5 text-[10px] font-bold bg-rose-600 text-white rounded-md shadow-sm">
-                          Épuisé
-                        </span>
-                      ) : isLowStock ? (
-                        <span className="px-2 py-0.5 text-[10px] font-bold bg-amber-500 text-white rounded-md shadow-sm">
-                          Reste {product.stockQuantity}
-                        </span>
-                      ) : (
-                        <span className="px-1.5 py-0.5 text-[10px] font-medium bg-slate-900/70 backdrop-blur-xs text-white rounded-md">
-                          {product.stockQuantity} en stock
-                        </span>
-                      )}
-                    </div>
-                  </div>
-
-                  {/* Body */}
-                  <div className="p-3.5 flex-1 flex flex-col justify-between">
-                    <div>
-                      <div className="flex items-center gap-1.5 text-[11px] text-slate-500 mb-1">
-                        <span>{product.category}</span>
-                        <span aria-hidden="true">·</span>
-                        <span className="font-mono">{product.sku}</span>
-                      </div>
-                      <h4 className="font-semibold text-xs text-slate-900 line-clamp-2 leading-snug group-hover:text-emerald-700 transition-colors">
-                        {product.name}
-                      </h4>
-                    </div>
-
-                    <div className="mt-2.5 pt-2 border-t border-slate-100 flex items-center justify-between">
-                      <div>
-                        <span className="text-sm font-bold text-slate-900 tabular-nums block leading-tight">
-                          {formatMoney(product.salePrice)}
-                        </span>
-                        <span className="text-[10px] text-slate-400 font-mono">
-                          ~ {(product.salePrice / exchangeRateUSD).toFixed(2)} $
-                        </span>
-                      </div>
-                      <span className="w-8 h-8 rounded-xl bg-emerald-50 group-hover:bg-emerald-600 group-hover:text-white flex items-center justify-center transition-colors shadow-sm">
-                        <Plus className="w-3.5 h-3.5 text-slate-700 group-hover:text-white" />
+          {/* Product Catalog Table */}
+          <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
+            <div className="hidden sm:grid grid-cols-[minmax(0,2.4fr)_minmax(110px,1fr)_minmax(120px,1fr)_minmax(100px,.8fr)_40px] gap-3 border-b border-slate-200 bg-slate-50/90 px-4 py-3 text-[10px] font-bold uppercase tracking-[0.12em] text-slate-500">
+              <span>Article</span><span>Catégorie / Réf.</span><span>Prix de vente</span><span>Disponibilité</span><span aria-hidden="true"></span>
+            </div>
+            <div className="divide-y divide-slate-100">
+              {filteredProducts.map((product) => {
+                const inStock = product.stockQuantity > 0;
+                const isLowStock = product.stockQuantity > 0 && product.stockQuantity <= product.minStockThreshold;
+                return (
+                  <button
+                    type="button"
+                    key={product.id}
+                    onClick={() => addToCart(product, 1)}
+                    className={`group grid w-full grid-cols-[minmax(0,1fr)_auto] sm:grid-cols-[minmax(0,2.4fr)_minmax(110px,1fr)_minmax(120px,1fr)_minmax(100px,.8fr)_40px] items-center gap-x-3 gap-y-2 px-3 sm:px-4 py-3 text-left transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-emerald-500 ${
+                      inStock ? 'hover:bg-emerald-50/50' : 'bg-slate-50/70 opacity-65 hover:bg-slate-100'
+                    }`}
+                  >
+                    <span className="flex min-w-0 items-center gap-3">
+                      <span className="h-12 w-12 shrink-0 overflow-hidden rounded-xl border border-slate-200 bg-slate-100">
+                        {product.image ? <img src={product.image} alt="" referrerPolicy="no-referrer" className="h-full w-full object-cover" /> : (
+                          <span className="flex h-full w-full items-center justify-center text-slate-400"><Package className="h-5 w-5 stroke-[1.5]" /></span>
+                        )}
                       </span>
-                    </div>
-                  </div>
-                </div>
-              );
-            })}
+                      <span className="min-w-0">
+                        <span className="block truncate text-sm font-semibold text-slate-800 transition-colors group-hover:text-emerald-800">{product.name}</span>
+                        <span className="mt-1 block truncate font-mono text-[10px] text-slate-400 sm:hidden">{product.sku}</span>
+                        <span className="mt-1 block text-[10px] text-slate-500 sm:hidden">{product.category}</span>
+                      </span>
+                    </span>
+                    <span className="hidden min-w-0 sm:block">
+                      <span className="block truncate text-xs font-medium text-slate-700">{product.category}</span>
+                      <span className="mt-1 block truncate font-mono text-[10px] text-slate-400">{product.sku}</span>
+                    </span>
+                    <span className="text-right sm:text-left">
+                      <span className="block whitespace-nowrap text-sm font-bold tabular-nums text-slate-900">{formatMoney(product.salePrice)}</span>
+                      <span className="mt-1 block whitespace-nowrap text-[10px] text-slate-400">~ {(product.salePrice / exchangeRateUSD).toFixed(2)} $</span>
+                    </span>
+                    <span className="hidden sm:block">
+                      {!inStock ? <span className="inline-flex rounded-full bg-rose-50 px-2.5 py-1 text-[10px] font-semibold text-rose-700">Épuisé</span> : isLowStock ? <span className="inline-flex rounded-full bg-amber-50 px-2.5 py-1 text-[10px] font-semibold text-amber-700">Reste {product.stockQuantity}</span> : <span className="inline-flex rounded-full bg-emerald-50 px-2.5 py-1 text-[10px] font-semibold text-emerald-700">{product.stockQuantity} en stock</span>}
+                    </span>
+                    <span className="flex items-center justify-end gap-2 sm:justify-center">
+                      <span className={`text-[10px] font-medium sm:hidden ${!inStock ? 'text-rose-600' : isLowStock ? 'text-amber-600' : 'text-emerald-700'}`}>
+                        {!inStock ? 'Épuisé' : isLowStock ? `Reste ${product.stockQuantity}` : `${product.stockQuantity} dispo.`}
+                      </span>
+                      <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border border-emerald-100 bg-emerald-50 text-emerald-700 transition-all group-hover:border-emerald-600 group-hover:bg-emerald-600 group-hover:text-white"><Plus className="h-4 w-4" /></span>
+                    </span>
+                  </button>
+                );
+              })}
+            </div>
           </div>
 
           {filteredProducts.length === 0 && (
