@@ -132,7 +132,7 @@ export const StaffView: React.FC = () => {
           ) : (
             <div className="flex items-center gap-3">
               <span className="font-mono font-bold text-slate-900 text-sm bg-slate-100 px-3 py-1.5 rounded-lg border border-slate-200">
-                PIN Actuel : {settings.adminPin || '1234'}
+                PIN administrateur masqué
               </span>
               <button
                 type="button"
@@ -291,7 +291,7 @@ export const StaffView: React.FC = () => {
                   type="text"
                   maxLength={4}
                   required
-                  placeholder="Ex: 1234"
+                  placeholder="Saisir 4 chiffres"
                   value={formPin}
                   onChange={(e) => setFormPin(e.target.value.replace(/\D/g, ''))}
                   className="w-full text-xs font-mono font-bold px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:ring-1 focus:ring-slate-900"
