@@ -163,9 +163,15 @@ export const OwnerLoginScreen: React.FC<OwnerLoginScreenProps> = ({ onAuthentica
           </div>
         </section>
 
-        <footer className="flex flex-col items-center justify-between gap-2 border-t border-white/[0.07] py-5 text-[10px] text-slate-600 sm:flex-row">
-          <span>© {new Date().getFullYear()} BoutiquePro. Tous droits réservés.</span>
-          <span className="tracking-wider">SIMPLE · PRIVÉ · EFFICACE</span>
+        <footer className="flex flex-col items-center justify-between gap-3 border-t border-white/[0.07] py-5 text-center sm:flex-row sm:text-left">
+          <div>
+            <p className="text-[11px] font-extrabold tracking-[0.2em] text-slate-300">BLACK WAKEUP COMPANY</p>
+            <p className="mt-1 text-[10px] italic tracking-wide text-emerald-300">Wake up and build the future.</p>
+          </div>
+          <div className="text-[10px] text-slate-600 sm:text-right">
+            <p>© {new Date().getFullYear()} Black Wakeup Company. Tous droits réservés.</p>
+            <p className="mt-1 tracking-wider">SIMPLE · PRIVÉ · EFFICACE</p>
+          </div>
         </footer>
       </div>
     </main>
