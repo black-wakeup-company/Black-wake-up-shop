@@ -155,7 +155,11 @@ export const EmployeeLoginScreen: React.FC<EmployeeLoginScreenProps> = ({ onAuth
           </div>
         </div>
 
-        <p className="mt-5 text-center text-[10px] tracking-wide text-slate-600">BOUTIQUEPRO · ESPACE ÉQUIPE</p>
+        <div className="mt-5 text-center">
+          <p className="text-[11px] font-extrabold tracking-[0.2em] text-slate-300">BLACK WAKEUP COMPANY</p>
+          <p className="mt-1 text-[10px] italic tracking-wide text-emerald-300">Wake up and build the future.</p>
+          <p className="mt-2 text-[10px] tracking-wide text-slate-600">ESPACE ÉQUIPE</p>
+        </div>
       </section>
     </main>
   );
